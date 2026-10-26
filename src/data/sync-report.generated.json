@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "repository": "emmabostian/developer-portfolios",
+    "file": "README.md",
+    "branch": "master",
+    "commit": "f1ace59cab5a8e5d4895321d519508387cfdffdf"
+  },
+  "generatedAt": "2026-10-26T16:35:28.404Z",
+  "stats": {
+    "linesScanned": 2176,
+    "entriesDetected": 2072,
+    "valid": 2072,
+    "duplicatesRemoved": 0,
+    "quarantined": 0,
+    "withDescription": 1213,
+    "classified": 1018,
+    "nameCollisionsKept": 0
+  },
+  "warnings": [
+    "line 196: unencoded quotes stripped from URL — \"Akshay Abraham\"",
+    "line 934: secondary link ignored — \"[Repo](https://jsn.cam/repo)\"",
+    "line 1235: recovered with lenient spacing — \"Md Mizan\"",
+    "line 1855: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
+    "2 URL hash fragment(s) dropped during normalization",
+    "1 entr(ies) whose initial does not match the upstream section letter"
+  ],
+  "quarantined": [],
+  "duplicateCollisions": [],
+  "technologies": [
+    {
+      "slug": "full-stack",
+      "label": "Full Stack",
+      "count": 600
+    },
+    {
+      "slug": "ai-ml",
+      "label": "AI / ML",
+      "count": 264
+    },
+    {
+      "slug": "frontend",
+      "label": "Frontend",
+      "count": 113
+    },
+    {
+      "slug": "devops-cloud",
+      "label": "DevOps & Cloud",
+      "count": 74
+    },
+    {
+      "slug": "backend",
+      "label": "Backend",
+      "count": 62
+    },
+    {
+      "slug": "react",
+      "label": "React",
+      "count": 59
+    },
+    {
+      "slug": "mobile",
+      "label": "Mobile",
+      "count": 55
+    },
+    {
+      "slug": "design",
+      "label": "Design",
+      "count": 45
+    },
+    {
+      "slug": "student",
+      "label": "Student",
+      "count": 44
+    },
+    {
+      "slug": "nextjs",
+      "label": "Next.js",
+      "count": 30
+    },
+    {
+      "slug": "data",
+      "label": "Data",
+      "count": 29
+    },
+    {
+      "slug": "freelance",
+      "label": "Freelance",
+      "count": 28
+    },
+    {
+      "slug": "python",
+      "label": "Python",
+      "count": 27
+    },
+    {
+      "slug": "typescript",
+      "label": "TypeScript",
+      "count": 23
+    },
+    {
+      "slug": "security",
+      "label": "Security",
+      "count": 21
+    },
+    {
+      "slug": "dotnet",
+      "label": ".NET",
+      "count": 15
+    },
+    {
+      "slug": "flutter",
+      "label": "Flutter",
+      "count": 15
+    },
+    {
+      "slug": "nodejs",
+      "label": "Node.js",
+      "count": 15
+    },
+    {
+      "slug": "php-laravel",
+      "label": "PHP / Laravel",
+      "count": 15
+    },
+    {
+      "slug": "java",
+      "label": "Java",
+      "count": 14
+    },
+    {
+      "slug": "blockchain",
+      "label": "Blockchain",
+      "count": 10
+    },
+    {
+      "slug": "game-dev",
+      "label": "Game Dev",
+      "count": 7
+    },
+    {
+      "slug": "vue",
+      "label": "Vue",
+      "count": 7
+    },
+    {
+      "slug": "wordpress",
+      "label": "WordPress",
+      "count": 6
+    },
+    {
+      "slug": "founder",
+      "label": "Founder",
+      "count": 4
+    },
+    {
+      "slug": "angular",
+      "label": "Angular",
+      "count": 3
+    },
+    {
+      "slug": "salesforce",
+      "label": "Salesforce",
+      "count": 3
+    },
+    {
+      "slug": "golang",
+      "label": "Go",
+      "count": 2
+    },
+    {
+      "slug": "javascript",
+      "label": "JavaScript",
+      "count": 2
+    },
+    {
+      "slug": "ruby",
+      "label": "Ruby / Rails",
+      "count": 2
+    }
+  ]
+}

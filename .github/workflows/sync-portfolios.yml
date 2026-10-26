@@ -1,0 +1,70 @@
+name: Sync portfolios
+
+# Scheduled + manual synchronization of the directory data from the
+# upstream repository. Opens a reviewable PR when the index changes;
+# never overwrites good data with a failed result.
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # daily at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-portfolios
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run synchronization pipeline
+        id: sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bun scripts/sync-portfolios.ts
+
+      - name: Detect data changes
+        id: diff
+        run: |
+          if git diff --quiet -- src/data/portfolios.generated.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No meaningful data changes — skipping."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- src/data/portfolios.generated.json
+          fi
+
+      - name: Run tests before publishing
+        if: steps.diff.outputs.changed == 'true'
+        run: bun test tests/unit
+
+      - name: Create pull request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore(data): synchronize portfolio index from upstream"
+          title: "Sync: portfolio index update"
+          body: |
+            Automated synchronization from `emmabostian/developer-portfolios`.
+
+            - Pipeline report is in `src/data/sync-report.generated.json`
+            - Unit tests passed before this PR was opened
+            - Merging this PR publishes the refreshed directory on the next deploy
+          branch: sync/portfolio-index
+          delete-branch: true
+          labels: data-sync

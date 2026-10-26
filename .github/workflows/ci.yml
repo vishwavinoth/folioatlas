@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Unit tests (parser, URL validation, classification, directory logic)
+        run: bun test tests/unit
+
+      - name: Validate generated data artifact
+        run: |
+          bun -e '
+            const idx = require("./src/data/portfolios.generated.json");
+            const rep = require("./src/data/sync-report.generated.json");
+            if (idx.schemaVersion !== 1) throw new Error("bad schemaVersion");
+            if (!Array.isArray(idx.portfolios) || idx.portfolios.length === 0) throw new Error("empty index");
+            if (idx.source.commit === null) console.warn("[warn] index built without a source commit SHA");
+            for (const p of idx.portfolios) {
+              if (!/^https?:\/\//.test(p.url)) throw new Error(`invalid URL in index: ${p.url}`);
+              if (!p.id || !p.name || !p.letter) throw new Error("incomplete entry");
+            }
+            console.log(`[ok] ${idx.portfolios.length} portfolios, ${rep.stats.quarantined} quarantined, ${rep.stats.duplicatesRemoved} dups removed`);
+          '
+
+      - name: Build
+        run: bun run build
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://example.com' }}
