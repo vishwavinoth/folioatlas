@@ -2,22 +2,39 @@
 
 import { Component, useEffect, useRef, type ReactNode } from "react";
 import type { ClientIndex } from "@/lib/portfolio/types";
+import { collectionBySlug } from "@/lib/portfolio/collections";
 import { useHashRoute, type Route } from "@/lib/router/hash-router";
 import { GlassNavigation } from "@/components/navigation/glass-navigation";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { HomeView } from "@/components/views/home-view";
 import { DirectoryView } from "@/components/views/directory-view";
-import { TechnologiesView } from "@/components/views/technologies-view";
+import { TechnologiesView, TechnologyLandingView } from "@/components/views/technologies-view";
 import { AboutView, MethodologyView, PrivacyView } from "@/components/views/content-views";
 import { ErrorState, NotFoundState } from "@/components/feedback/states";
+import { PortfolioDetail } from "@/components/portfolio/portfolio-detail";
+import { CommandPaletteHost } from "@/components/command/palette-host";
 
 /** Per-view document titles (keeps history entries and shares descriptive). */
 function titleFor(route: Route, index: ClientIndex): string {
   const p = route.path;
   if (p === "/" || p === "") return "FolioAtlas — Discover Developer Portfolios";
+  if (p.startsWith("/portfolio/")) {
+    const slug = p.split("/")[2] ?? "";
+    const name = slug
+      .split("-")
+      .slice(0, -1)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+    return name ? `${name} — Developer Portfolio | FolioAtlas` : "Developer Portfolio | FolioAtlas";
+  }
   if (p.startsWith("/portfolios/letter/")) {
     const letter = p.split("/")[3]?.toUpperCase() ?? "";
     return `Portfolios starting with ${letter} | FolioAtlas`;
+  }
+  if (p.startsWith("/collections/")) {
+    const slug = p.split("/")[2] ?? "";
+    const col = collectionBySlug(slug);
+    return col ? `${col.label} Developer Portfolios | FolioAtlas` : "Page not found | FolioAtlas";
   }
   if (p.startsWith("/technologies/")) {
     const slug = p.split("/")[2] ?? "";
@@ -56,7 +73,7 @@ class ViewErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
 function renderView(route: Route, index: ClientIndex): ReactNode {
   const p = route.path;
 
-  if (p === "/" || p === "") return <HomeView index={index} />;
+  if (p === "/" || p === "") return <HomeView />;
 
   if (p === "/portfolios") return <DirectoryView index={index} route={route} />;
 
@@ -66,13 +83,25 @@ function renderView(route: Route, index: ClientIndex): ReactNode {
     return <DirectoryView index={index} route={route} />;
   }
 
+  if (p.startsWith("/portfolio/")) {
+    const slug = p.split("/")[2] ?? "";
+    if (!/^[a-z0-9-]{1,80}$/.test(slug)) return <NotFoundState title="Portfolio not found" detail="This link is malformed. Browse the directory to find the developer you are looking for." />;
+    return <PortfolioDetail key={slug} slug={slug} />;
+  }
+
+  if (p.startsWith("/collections/")) {
+    const slug = p.split("/")[2] ?? "";
+    if (!collectionBySlug(slug)) return <NotFoundState title="Collection not found" />;
+    return <DirectoryView index={index} route={route} />;
+  }
+
   if (p === "/technologies") return <TechnologiesView index={index} />;
 
   if (p.startsWith("/technologies/")) {
     const slug = p.split("/")[2] ?? "";
     const exists = index.technologies.some((t) => t.slug === slug);
     if (!exists) return <NotFoundState />;
-    return <DirectoryView index={index} route={route} />;
+    return <TechnologyLandingView key={slug} slug={slug} index={index} route={route} />;
   }
 
   if (p === "/about") return <AboutView index={index} />;
@@ -104,7 +133,7 @@ export function FolioAtlasApp({ index }: { index: ClientIndex }) {
       <GlassNavigation />
       <main id="main-content" className="flex-1 pt-[76px]">
         <ViewErrorBoundary>
-          {index.portfolios.length === 0 ? (
+          {index.technologies.length === 0 ? (
             <div className="px-4 py-16">
               <ErrorState title="Directory index unavailable" />
             </div>
@@ -114,6 +143,7 @@ export function FolioAtlasApp({ index }: { index: ClientIndex }) {
         </ViewErrorBoundary>
       </main>
       <SiteFooter index={index} />
+      <CommandPaletteHost />
     </>
   );
 }

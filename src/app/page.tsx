@@ -1,35 +1,33 @@
+import reportJson from "@/data/sync-report.generated.json";
 import indexJson from "@/data/portfolios.generated.json";
 import type { ClientIndex } from "@/lib/portfolio/types";
 import { FolioAtlasApp } from "@/components/folioatlas-app";
 
 /**
- * Server component: loads the generated, versioned data artifact (PRD §7.8)
- * and embeds it for the client router. Provenance fields stay in the
- * artifact on disk; the wire payload carries the lean shape.
+ * Server component: embeds a SLIM index (stats + technologies only).
+ *
+ * Portfolio data is intentionally NOT embedded in the client bundle any more —
+ * the directory is served by the database-backed /api/search endpoint with
+ * server-side pagination (PRD §5). The generated artifact stays the build-time
+ * source of truth for canonical technology labels and stats.
  */
 function loadClientIndex(): ClientIndex {
-  const raw = indexJson as unknown as {
-    schemaVersion: number;
+  const report = reportJson as unknown as {
     source: ClientIndex["source"];
     generatedAt: string;
     stats: ClientIndex["stats"];
+  };
+  const index = indexJson as unknown as {
     technologies: ClientIndex["technologies"];
-    portfolios: Array<Record<string, unknown>>;
+    stats?: ClientIndex["stats"];
   };
   return {
-    schemaVersion: raw.schemaVersion,
-    source: raw.source,
-    generatedAt: raw.generatedAt,
-    stats: raw.stats,
-    technologies: raw.technologies,
-    portfolios: raw.portfolios.map((p) => ({
-      id: p.id as string,
-      name: p.name as string,
-      url: p.url as string,
-      ...(typeof p.description === "string" ? { description: p.description } : {}),
-      ...(Array.isArray(p.technologies) ? { technologies: p.technologies as string[] } : {}),
-      letter: p.letter as string,
-    })),
+    schemaVersion: 1,
+    source: report.source,
+    generatedAt: report.generatedAt,
+    stats: report.stats,
+    technologies: index.technologies,
+    portfolios: [], // served via /api/search — never shipped to the browser
   };
 }
 

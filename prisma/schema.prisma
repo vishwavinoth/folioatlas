@@ -1,8 +1,9 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// FolioAtlas — persistence schema.
+//
+// Mirrors the PRD §8 data model 1:1 (portfolios, portfolio_ai_summaries,
+// portfolio_previews, sync_runs, portfolio_count_snapshots) so the same
+// relational shape can run on SQLite (local/sandbox) and Postgres/Supabase
+// (production — see supabase/migrations/0001_init.sql).
 
 generator client {
   provider = "prisma-client-js"
@@ -13,20 +14,123 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+/// Directory entry sourced from the upstream repository.
+/// Identity is deterministic: slug = ascii-name + 8 hex of sha1(name|url).
+model Portfolio {
+  id               String    @id
+  slug             String    @unique
+  name             String
+  /// Only derived from a github.io subdomain (clearly labeled inferred), never guessed otherwise.
+  githubUsername   String?
+  githubProfileUrl String?
+  /// none | inferred-domain
+  githubSource     String    @default("none")
+  portfolioUrl     String
+  avatarUrl        String?
+  /// Role text supplied upstream, verbatim (never inferred from URLs).
+  role             String?
+  description      String?
+  /// JSON array of canonical technology slugs (SQLite has no array columns).
+  technologies     String    @default("[]")
+  /// A–Z bucket derived from the upstream section heading.
+  letter           String
+  sourceSection    String    @default("")
+  sourceRepository String
+  sourceLine       Int?
+  sourceEntryHash  String
+  firstSeenAt      DateTime
+  lastSeenAt       DateTime
+  sourceUpdatedAt  DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  aiSummary PortfolioAiSummary?
+  preview   PortfolioPreview?
+
+  @@index([letter])
+  @@index([firstSeenAt])
+  @@index([lastSeenAt])
+  @@index([name])
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+/// AI-generated portfolio summary. One row per portfolio; regenerated in
+/// place when the source entry hash changes or an authorized refresh runs.
+model PortfolioAiSummary {
+  id              String    @id @default(cuid())
+  portfolioId     String    @unique
+  portfolio       Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  summary         String    @default("")
+  /// JSON array of canonical technology slugs the summary is grounded in.
+  keyTechnologies String    @default("[]")
+  /// JSON array of short specialty phrases grounded in source data.
+  specialties     String    @default("[]")
+  sourceHash      String
+  model           String    @default("")
+  /// pending | complete | failed
+  status          String    @default("pending")
+  generatedAt     DateTime?
+  errorCode       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status])
+}
+
+/// Screenshot/preview bookkeeping. The provider URL is resolved server-side
+/// only; the client never sees provider credentials.
+model PortfolioPreview {
+  id            String    @id @default(cuid())
+  portfolioId   String    @unique
+  portfolio     Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  /// Resolved, safe provider image URL (or storage key when a real provider is configured).
+  imageUrl      String?
+  provider      String?
+  /// pending | ready | unavailable
+  status        String    @default("pending")
+  capturedAt    DateTime?
+  sourceUrlHash String
+  errorCode     String?
+  updatedAt     DateTime  @updatedAt
+}
+
+/// One row per successful directory synchronization execution.
+model SyncRun {
+  id                    String    @id @default(cuid())
+  startedAt             DateTime
+  completedAt          DateTime?
+  /// running | success | failed
+  status                String    @default("running")
+  /// manual | seed | cron | github-action
+  trigger               String    @default("manual")
+  sourceCommitSha       String?
+  sourceEntryCount      Int?
+  insertedCount         Int?
+  updatedCount          Int?
+  removedOrMissingCount Int?
+  errorSummary          String?
+
+  snapshots PortfolioCountSnapshot[]
+
+  @@index([status])
+  @@index([startedAt])
+}
+
+/// Count record used by the Portfolio Growth chart.
+/// provenance distinguishes trustworthy sources:
+///  - git-history: derived from a verified upstream commit (sha recorded)
+///  - sync-run:    recorded during one of our own successful syncs
+model PortfolioCountSnapshot {
+  id                String   @id @default(cuid())
+  syncRunId         String?
+  syncRun           SyncRun? @relation(fields: [syncRunId], references: [id], onDelete: SetNull)
+  recordedAt        DateTime
+  totalPortfolios   Int
+  portfoliosAdded   Int
+  portfoliosUpdated Int     @default(0)
+  /// git-history | sync-run
+  provenance        String   @default("sync-run")
+  sourceCommitSha   String?
+
+  @@index([recordedAt])
+  @@index([provenance])
 }

@@ -186,6 +186,41 @@ export function MethodologyView({ index }: { index: ClientIndex }) {
           </p>
         </Section>
 
+        <Section title="Verified growth history">
+          <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
+            The Portfolio Growth chart is built exclusively from verified records. When FolioAtlas synchronizes, it
+            records a snapshot of the directory size with the exact upstream commit SHA and timestamp. Historical
+            points are derived by replaying the upstream repository&apos;s actual git history — each historical count
+            is the real number of valid entries present in a real, linkable commit. Nothing is interpolated from a
+            single report, and the chart always states the window its history covers. Where provenance cannot be
+            established, history simply starts later — it is never invented.
+          </p>
+        </Section>
+
+        <Section title="AI features and their guardrails">
+          <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
+            Two features use language models, and both are clearly labeled. First, <strong className="text-foreground">AI
+            search</strong>: your plain-language request is converted into a typed search intent (focus areas, keywords,
+            exclusions) that is validated against the canonical technology vocabulary before the database executes the
+            real query. The model can shape the query; it can never invent developer records. Second,{" "}
+            <strong className="text-foreground">AI portfolio summaries</strong>: generated once per entry from the
+            entry&apos;s supplied role text and focus areas only, validated against a strict schema, stored, and reused.
+            Summaries never claim experience, employment, or project ownership that the source does not support, and
+            every summary is labeled AI-generated. When the AI provider is unavailable, both features fall back to the
+            standard keyword search — the directory keeps working without AI.
+          </p>
+        </Section>
+
+        <Section title="Website previews">
+          <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
+            Preview thumbnails are resolved server-side and redirected through FolioAtlas — no screenshot-provider
+            credentials ever reach your browser. If a website refuses embedding or a screenshot cannot be produced,
+            the UI says so explicitly with an open-in-new-tab action instead of showing anything fabricated. Sites
+            that block embedding do so through their own security headers; FolioAtlas never bypasses those
+            restrictions.
+          </p>
+        </Section>
+
         <Section title="Corrections and removals">
           <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
             Because the upstream repository is the canonical source, edits — including removing your own portfolio —
@@ -215,11 +250,14 @@ export function PrivacyView() {
           </p>
         </Section>
 
-        <Section title="Search stays on your device">
+        <Section title="Search and the server">
           <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
-            Search, filtering, sorting and pagination run entirely in your browser over a pre-built index. Your search
-            terms are not sent to a server, logged, or shared. Filter state lives in the page URL so you can share or
-            bookmark a view — that is the only place it goes.
+            Search, filtering, sorting and pagination run against the directory database on the server, so results are
+            consistent and shareable. Search terms travel as ordinary URL query parameters — the same thing you would
+            send by loading a link — and are not profiled, tracked, or combined with anything identifying. Filter
+            state lives in the page URL so you can share or bookmark a view; that is the only place it goes. When you
+            use AI search, your query text is sent to the configured language-model provider solely to be parsed into
+            a structured search intent; it is not stored.
           </p>
         </Section>
 

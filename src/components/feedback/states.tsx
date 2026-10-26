@@ -1,6 +1,16 @@
 import { FileQuestion, RotateCcw, SearchX, WifiOff } from "lucide-react";
 
-export function EmptyState({ query, onClearFilters }: { query: string; onClearFilters?: () => void }) {
+export type EmptySuggestion = { label: string; href: string };
+
+export function EmptyState({
+  query,
+  onClearFilters,
+  suggestions = [],
+}: {
+  query: string;
+  onClearFilters?: () => void;
+  suggestions?: EmptySuggestion[];
+}) {
   return (
     <div className="surface-card motion-fade-in mx-auto flex max-w-lg flex-col items-center rounded-3xl px-6 py-12 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--fa-accent)]/10 text-[var(--fa-accent)]">
@@ -17,6 +27,20 @@ export function EmptyState({ query, onClearFilters }: { query: string; onClearFi
           "No entries match the current filters. Try removing a filter or browsing a different letter."
         )}
       </p>
+      {suggestions.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
+          <span className="text-xs text-[var(--fa-text-secondary)]">Popular:</span>
+          {suggestions.map((s) => (
+            <a
+              key={s.href}
+              href={s.href}
+              className="rounded-full border border-[var(--surface-border)] px-2.5 py-1 text-xs font-medium transition-colors hover:border-[var(--fa-accent)]/40 hover:text-[var(--fa-accent)]"
+            >
+              {s.label}
+            </a>
+          ))}
+        </div>
+      )}
       {onClearFilters && (
         <button
           type="button"
@@ -31,7 +55,15 @@ export function EmptyState({ query, onClearFilters }: { query: string; onClearFi
   );
 }
 
-export function ErrorState({ title, detail }: { title: string; detail?: string }) {
+export function ErrorState({
+  title,
+  detail,
+  onRetry,
+}: {
+  title: string;
+  detail?: string;
+  onRetry?: () => void;
+}) {
   return (
     <div className="surface-card motion-fade-in mx-auto flex max-w-lg flex-col items-center rounded-3xl px-6 py-12 text-center" role="alert">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--fa-warning)]/15 text-[var(--fa-warning)]">
@@ -41,25 +73,42 @@ export function ErrorState({ title, detail }: { title: string; detail?: string }
       <p className="mt-2 text-sm leading-relaxed text-[var(--fa-text-secondary)]">
         {detail ?? "The directory index could not be loaded. Any previously generated data remains intact — please try again or check the synchronization report."}
       </p>
-      <a
-        href="#/"
-        className="mt-5 inline-flex h-10 items-center rounded-full bg-[var(--fa-accent)] px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--fa-accent-strong)]"
-      >
-        Back to homepage
-      </a>
+      {onRetry ? (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-5 inline-flex h-10 items-center gap-2 rounded-full bg-[var(--fa-accent)] px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--fa-accent-strong)]"
+        >
+          <RotateCcw className="h-4 w-4" aria-hidden="true" />
+          Try again
+        </button>
+      ) : (
+        <a
+          href="#/"
+          className="mt-5 inline-flex h-10 items-center rounded-full bg-[var(--fa-accent)] px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--fa-accent-strong)]"
+        >
+          Back to homepage
+        </a>
+      )}
     </div>
   );
 }
 
-export function NotFoundState() {
+export function NotFoundState({
+  title = "Page not found",
+  detail,
+}: {
+  title?: string;
+  detail?: string;
+} = {}) {
   return (
     <div className="surface-card motion-fade-in mx-auto flex max-w-lg flex-col items-center rounded-3xl px-6 py-12 text-center">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--fa-text-secondary)]/10 text-[var(--fa-text-secondary)]">
         <FileQuestion className="h-7 w-7" aria-hidden="true" />
       </div>
-      <h1 className="mt-4 text-lg font-semibold">Page not found</h1>
+      <h1 className="mt-4 text-lg font-semibold">{title}</h1>
       <p className="mt-2 text-sm leading-relaxed text-[var(--fa-text-secondary)]">
-        The page you were looking for doesn’t exist. It may have moved, or the link may be outdated.
+        {detail ?? "The page you were looking for doesn’t exist. It may have moved, or the link may be outdated."}
       </p>
       <a
         href="#/"

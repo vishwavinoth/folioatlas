@@ -52,3 +52,28 @@ Work Log:
 
 Stage Summary:
 - 2,072/2,072 upstream entries live; lint clean; 50/50 tests; sitemap/robots serving; browser-verified end-to-end
+
+---
+Task ID: 4
+Agent: main (Z.ai)
+Task: Phase 8-14 — AI-enhanced upgrade (growth analytics, database layer, AI search/summaries, detail pages, previews, shortcuts, Supabase kit)
+
+Work Log:
+- Prisma schema rewritten 1:1 to PRD §8: portfolios, portfolio_ai_summaries, portfolio_previews, sync_runs, portfolio_count_snapshots (indexes, defaults, FKs, cascade)
+- scripts/seed-db.ts: mined VERIFIED upstream git history (cloned emmabostian/developer-portfolios, 3,715 README commits walked) → per-entry first_seen_at/last_seen_at/source_updated_at from real commits; 3,713 git-history snapshots with commit SHAs; idempotent upserts; sync_runs + sync-run snapshot recorded
+- Store layer (src/lib/store/queries.ts): server-side keyword search (token AND across name/role/url/tech), tech multi-select (AND, exact JSON-token match), collection unions, letter/site/hasSummary/addedWithin filters, relevance scoring, detail + related (overlap-ranked), stats, growth bucketing (day/week/month), recently-added, featured (transparent criteria), collections (real union counts), related technologies (co-occurrence), letter counts
+- API routes: /api/search, /api/stats (60s cache), /api/growth, /api/portfolios/[slug], /api/technologies, /api/preview/[slug] (302, provider server-side, rate-limited), /api/ai/search (10/min), /api/ai/summaries (6/min); src/lib/server/{request,rate-limit,preview,hash}.ts
+- AI layer: provider.ts (Groq OpenAI-compatible JSON mode via GROQ_API_KEY/GROQ_MODEL; z-ai-web-dev-sdk fallback; extractJson tolerant parser), search-intent.ts (zod schema, canonical-vocabulary validation — unknown slugs dropped, plan builder), summaries.ts (grounded-only prompt, schema validation, DB persistence, status/error tracking, insufficient-data guard)
+- Client: PortfolioCard v2 (avatar fallback, preview image with skeleton/error states, AI badge, Details/Preview/Open actions, copy link); PreviewImage + PreviewDialog (iframe attempt + timeout notice + always-visible open-in-new-tab, sandboxed, no security bypass); PortfolioDetail (identity, View GitHub Profile, attribution rules, AI summary card with generate/regenerate, focus areas, metadata panel, related grid, share/copy, JSON-LD ProfilePage, per-view title/meta); HomeView v2 (hero + verified stats, GrowthChart with 30d/90d/1y/all + accessible labels + honest empty state, recently added, collections, featured, explore CTA, A-Z, transparency); DirectoryView v2 (keyword/AI mode toggle, advanced filter popovers, chips, clear-all, server-backed pagination, skeletons, suggestions in empty state); TechnologiesView + TechnologyLandingView (blurb, live count, related techs); Collections routes with OR-semantics via ?collection=
+- Command palette (cmdk, API-driven results with controlled selection so Enter opens the top result, ⌘/Ctrl+Enter new tab) + ShortcutsHelp + use-shortcuts hook (/, ⌘K, Esc, ?, editable-target guard, modal-aware); nav Quick find button
+- page.tsx slimmed: portfolio payload removed from client bundle (API serves it); sitemap/robots intact
+- Content pages updated: methodology (verified growth history, AI guardrails, previews), privacy (search on server, AI query disclosure)
+- Fixed: Radix useId hydration mismatch (DialogHeader moved inside portal content), cmdk native filtering vs API results (shouldFilter=false + controlled value), React hooks lint (render-time adjustment patterns), letter query-param direct links, collection filtering
+- Tests: +24 new (search-intent validation/clamping, growth bucketing/add-accounting/provenance, extractJson, preview provider resolution + credential safety, GitHub identity derivation) → 74/74 pass; lint clean; tsc src/ clean
+- Supabase kit: supabase/migrations/0001_init.sql (Postgres schema + GIN index + RLS public-read/service-role-write) + supabase/README.md (6-step setup, verification SQL, security invariants) — NOT executed/verified (no credentials in sandbox); .env.example rewritten (DATABASE_URL, GROQ_*, PREVIEW_*, SCREENSHOT_ONE_*, SUPABASE_*, EMBEDDING_*); README.md fully updated
+- E2E verified via agent-browser: home light/dark + stats, growth chart (real dip in Feb 2026 confirmed genuine upstream history — NOT smoothed), directory search URL-sync (62 react results), filters (letter a: 388 = artifact count), pagination, tech landing (Next.js 30, related counts), collections (frontend-craft 220), detail page (real preview, AI summary generated + grounded), AI search (interpretation + intent chips + 2 real results), palette live search + Enter navigation, / ? Esc shortcuts, ? correct ignored while typing, mobile 375px, footer push, console clean
+
+Stage Summary:
+- Everything backed by real data: 2,072 portfolios, 3,714 snapshots (2019-09-13 → 2026-10-26 verified range), 276 inferred GitHub identities, 1 generated AI summary in DB
+- AI provider works in-sandbox via z-ai fallback; Groq activates when GROQ_API_KEY set; graceful degradation everywhere
+- Supabase documented as optional production path, honestly marked unverified; local Prisma/SQLite layer is the working persistence

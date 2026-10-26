@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Compass, Github, Menu, X } from "lucide-react";
+import { Compass, Github, Menu, Search, X } from "lucide-react";
 import { buildHref, useHashRoute, type Route } from "@/lib/router/hash-router";
+import { paletteControls } from "@/components/command/palette-host";
 import { ThemeToggle } from "./theme-toggle";
 
 const NAV_ITEMS = [
@@ -85,15 +86,30 @@ export function GlassNavigation() {
         </ul>
 
         <div className="ml-auto flex items-center gap-1.5">
+          {/* Command palette trigger (⌘K) — also opens via the global shortcut. */}
+          <button
+            type="button"
+            onClick={() => paletteControls.open()}
+            className="flex h-9 items-center gap-2 rounded-full border border-[var(--surface-border)] px-2.5 text-[var(--fa-text-secondary)] transition-colors hover:text-foreground sm:px-3"
+            aria-label="Open command palette (Ctrl or Cmd + K)"
+            aria-haspopup="dialog"
+          >
+            <Search className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden text-sm lg:inline">Quick find</span>
+            <kbd className="hidden rounded border border-[var(--surface-border)] px-1.5 py-0.5 font-mono text-[10px] lg:inline">
+              ⌘K
+            </kbd>
+          </button>
+
           <a
             href={SOURCE_REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden h-9 items-center gap-2 rounded-full border border-[var(--surface-border)] px-3 text-sm text-[var(--fa-text-secondary)] transition-colors hover:text-foreground sm:flex"
+            className="hidden h-9 items-center gap-2 rounded-full border border-[var(--surface-border)] px-3 text-sm text-[var(--fa-text-secondary)] transition-colors hover:text-foreground xl:flex"
             aria-label="View the upstream source repository on GitHub (opens in a new tab)"
           >
             <Github className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden lg:inline">Source</span>
+            <span className="hidden 2xl:inline">Source</span>
           </a>
 
           <ThemeToggle />
