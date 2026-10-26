@@ -7,6 +7,18 @@ import { db } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 /**
+ * Status tracking is best-effort: on read-only hosts (e.g. the bundled SQLite
+ * file on Vercel) the write fails, but the redirect must still be served.
+ */
+async function recordPreview(write: Promise<unknown>): Promise<void> {
+  try {
+    await write;
+  } catch (err) {
+    console.warn("[api/preview] status not recorded:", err instanceof Error ? err.message : err);
+  }
+}
+
+/**
  * GET /api/preview/[slug] — resolves the preview image URL server-side and
  * 302-redirects to it. Provider credentials never reach the client.
  * The resolution is recorded in portfolio_previews for status tracking.
@@ -33,7 +45,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ slug: string }>
 
     if (!resolution.ok) {
       // Persist unavailability so the UI can show an explicit state.
-      await db.portfolioPreview.upsert({
+      await recordPreview(db.portfolioPreview.upsert({
         where: { portfolioId: portfolio.id },
         create: {
           portfolioId: portfolio.id,
@@ -43,11 +55,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ slug: string }>
           errorCode: "previews-disabled",
         },
         update: { status: "unavailable", provider: "none", errorCode: "previews-disabled" },
-      });
+      }));
       return new Response("Previews are disabled on this deployment", { status: 501 });
     }
 
-    await db.portfolioPreview.upsert({
+    await recordPreview(db.portfolioPreview.upsert({
       where: { portfolioId: portfolio.id },
       create: {
         portfolioId: portfolio.id,
@@ -57,7 +69,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ slug: string }>
         sourceUrlHash,
       },
       update: { status: "pending", provider: resolution.provider },
-    });
+    }));
 
     return new Response(null, {
       status: 302,
