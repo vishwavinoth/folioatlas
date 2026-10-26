@@ -2,6 +2,7 @@
 
 import { Compass, ExternalLink, Github } from "lucide-react";
 import type { ClientIndex } from "@/lib/portfolio/types";
+import { CREATOR } from "@/lib/site/creator";
 
 export function SiteFooter({ index }: { index: ClientIndex }) {
   const synced = new Date(index.generatedAt);
@@ -22,6 +23,40 @@ export function SiteFooter({ index }: { index: ClientIndex }) {
               One beautiful place to discover real developer portfolios. All entries are sourced from an
               open-source community repository — nothing here is invented.
             </p>
+            <p className="mt-3 text-[13px] text-[var(--fa-text-secondary)]">
+              Built by{" "}
+              <a
+                className="font-medium text-foreground transition-colors hover:text-[var(--fa-accent)]"
+                href={CREATOR.profileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {CREATOR.name}
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a
+                href={`https://github.com/${index.source.repository}/blob/${index.source.branch}/CONTRIBUTING.md`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-8 items-center gap-1 rounded-full bg-[var(--fa-accent)] px-3.5 text-xs font-medium text-white transition-colors hover:bg-[var(--fa-accent-strong)]"
+              >
+                Add your portfolio
+                <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                <span className="sr-only">(opens the upstream repository in a new tab)</span>
+              </a>
+              <a
+                href={CREATOR.profileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-8 items-center gap-1 rounded-full border border-[var(--surface-border)] px-3.5 text-xs font-medium text-foreground/80 transition-colors hover:text-[var(--fa-accent)]"
+              >
+                <Github className="h-3.5 w-3.5" aria-hidden="true" />
+                {CREATOR.contactLabel}
+                <span className="sr-only">(opens in a new tab)</span>
+              </a>
+            </div>
           </div>
 
           <nav aria-label="Footer" className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3">

@@ -3,6 +3,7 @@
 import type { ClientIndex } from "@/lib/portfolio/types";
 import { CLASSIFICATION_RULES } from "@/lib/portfolio/classify";
 import { useFeatures } from "@/lib/features/context";
+import { CREATOR } from "@/lib/site/creator";
 
 function Prose({ children }: { children: React.ReactNode }) {
   return <div className="fa-prose max-w-2xl">{children}</div>;
@@ -85,6 +86,37 @@ export function AboutView({ index }: { index: ClientIndex }) {
             </a>
             .
           </p>
+        </Section>
+
+        <Section title="Who built this">
+          <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
+            FolioAtlas was designed and built by{" "}
+            <a className="text-[var(--fa-accent)] hover:underline" href={CREATOR.profileUrl} target="_blank" rel="noopener noreferrer">
+              {CREATOR.name}
+            </a>{" "}
+            as an independent tribute to the community list that inspired it. Feedback, ideas and collaboration
+            requests are welcome.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a
+              href={CREATOR.profileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-10 items-center rounded-full bg-[var(--fa-accent)] px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--fa-accent-strong)]"
+            >
+              {CREATOR.contactLabel}
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+            <a
+              href={`https://github.com/${index.source.repository}/blob/${index.source.branch}/CONTRIBUTING.md`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="glass-clear inline-flex h-10 items-center rounded-full px-5 text-sm font-medium transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.08]"
+            >
+              Add your portfolio
+              <span className="sr-only"> (opens the upstream repository in a new tab)</span>
+            </a>
+          </div>
         </Section>
       </Prose>
     </div>
