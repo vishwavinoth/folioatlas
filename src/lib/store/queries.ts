@@ -40,21 +40,29 @@ export type {
 } from "./catalog";
 
 const CACHE_TTL_MS = 5 * 60_000;
+/** An empty result usually means the database is still being seeded: retry soon. */
+const EMPTY_TTL_MS = 15_000;
 
 type Catalog = { entries: CatalogEntry[]; bySlug: Map<string, CatalogEntry> };
 type History = { snapshots: GrowthSnapshot[]; lastSyncRun: SyncRunRow | null };
 
 /** TTL cache that shares one in-flight load and never caches failures. */
-function ttlCache<T>(load: () => Promise<T>) {
-  let entry: { at: number; value: Promise<T> } | null = null;
+function ttlCache<T>(load: () => Promise<T>, isEmpty: (value: T) => boolean) {
+  let entry: { at: number; ttl: number; value: Promise<T> } | null = null;
   return {
     get(): Promise<T> {
-      if (entry && Date.now() - entry.at < CACHE_TTL_MS) return entry.value;
+      if (entry && Date.now() - entry.at < entry.ttl) return entry.value;
       const value = load();
-      entry = { at: Date.now(), value };
-      value.catch(() => {
-        if (entry?.value === value) entry = null;
-      });
+      const current = { at: Date.now(), ttl: CACHE_TTL_MS, value };
+      entry = current;
+      value.then(
+        (v) => {
+          if (isEmpty(v)) current.ttl = EMPTY_TTL_MS;
+        },
+        () => {
+          if (entry === current) entry = null;
+        }
+      );
       return value;
     },
     invalidate() {
@@ -73,7 +81,7 @@ const catalogCache = ttlCache<Catalog>(async () => {
   ]);
   const entries = buildCatalog(rows, summaries);
   return { entries, bySlug: new Map(entries.map((e) => [e.wire.slug, e])) };
-});
+}, (c) => c.entries.length === 0);
 
 const historyCache = ttlCache<History>(async () => {
   const db = dbReader();
@@ -96,7 +104,7 @@ const historyCache = ttlCache<History>(async () => {
   ]);
   if (lastRun.error) throw new Error(`supabase query failed: ${lastRun.error.message}`);
   return { snapshots, lastSyncRun: lastRun.data };
-});
+}, (h) => h.snapshots.length === 0);
 
 export const loadCatalog = () => catalogCache.get();
 
