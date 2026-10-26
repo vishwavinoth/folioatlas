@@ -1,6 +1,6 @@
 # FolioAtlas — Product Requirements Document (Living)
 
-> **Status:** Implemented through v0.3.0 · Last updated 2026-10-27
+> **Status:** Implemented through v0.5.0 · Last updated 2026-10-26
 > This is the living PRD for the implemented product. The original frozen build brief is preserved
 > at `upload/PRD.md` (verbatim, 22 sections); where the two disagree, this document reflects what
 > was actually built and verified. Requirement status: ✅ implemented & verified · ⚠️ partial ·
@@ -45,24 +45,24 @@ recruiters evaluating candidates' public work; engineering leaders studying port
 - **Browse alphabetically** — letter navigator with real counts; disabled letters for empty buckets.
 - **Inspect a portfolio** — detail view: identity, website preview dialog, AI summary (labeled),
   focus areas, related portfolios, source & verification panel.
-- **Handle unavailable data** — explicit empty / error / not-found / preview-unavailable states;
+- **Handle unavailable data** — explicit empty / error / not-found (HTTP 404) / embedding-blocked states;
   a failed upstream fetch never deletes stored records.
 
 ## 3. Information architecture
 
-The production deployment exposes canonical path routes; the current sandbox host serves only the
-root route, so the shipped information architecture is a hash-routed SPA on `/` with shareable URLs
-(`#/portfolios?q=react&tech=nextjs&sort=relevance&page=3`). Route table:
+Clean, server-rendered path routes with per-route metadata and real 404 status codes; filter
+state lives in the query string (`/portfolios?q=react&tech=nextjs&sort=relevance&page=3`).
+Legacy `/#/…` links redirect. Route table:
 
 | Route | Purpose | Status |
 |---|---|---|
-| `#/` | Home: hero, verified stats, growth chart, recently added, collections, featured | ✅ |
-| `#/portfolios` | Directory: search, AI-search toggle, filters, sort, pagination | ✅ |
-| `#/portfolios/letter/{a–z}` | Alphabetical browsing | ✅ |
-| `#/portfolio/{slug}` | Developer profile page (JSON-LD `ProfilePage`) | ✅ |
-| `#/technologies`, `#/technologies/{slug}` | Focus-area index + landing pages | ✅ |
-| `#/collections/{slug}` | Curated collection (union semantics) | ✅ |
-| `#/about`, `#/methodology`, `#/privacy` | Content pages incl. AI guardrails + provenance | ✅ |
+| `/` | Home: hero, verified stats, growth chart, recently added, collections, featured | ✅ |
+| `/portfolios` | Directory: search, AI-search toggle, filters, sort, pagination | ✅ |
+| `/portfolios/letter/{a–z}` | Alphabetical browsing | ✅ |
+| `/portfolio/{slug}` | Developer profile page (JSON-LD `BreadcrumbList`) | ✅ |
+| `/technologies`, `/technologies/{slug}` | Focus-area index + landing pages | ✅ |
+| `/collections/{slug}` | Curated collection (union semantics) | ✅ |
+| `/about`, `/methodology`, `/privacy` | Content pages incl. AI guardrails + provenance | ✅ |
 
 ## 4. Design system — Apple Liquid Glass
 
@@ -111,7 +111,7 @@ smoothing, no interpolation, no fabrication from a single report.
 |---|---|---|
 | Keyword search | Server-side token AND across name/role/url/technologies; debounced; URL-synced; relevance/name/newest sort; server-side pagination | ✅ |
 | Advanced filters | Multi focus-area (AND), site type, has-AI-summary, added-within window (verified dates); chips + clear-all; every state shareable | ✅ |
-| AI search | Natural language → zod-validated intent restricted to the canonical vocabulary → real DB query → transparent "why matched" display; falls back to keyword search when no provider | ✅ (Groq path needs `GROQ_API_KEY`; verified in-sandbox via built-in provider fallback) |
+| AI search (optional) | Hidden unless `GROQ_API_KEY` is set (no non-functional controls). Natural language → zod-validated intent restricted to the canonical vocabulary → real DB query → transparent "why matched" display; falls back to keyword search when no provider | ✅ (Groq path needs `GROQ_API_KEY`; verified in-sandbox via built-in provider fallback) |
 | AI summaries | Grounded-only prompt, schema-validated, persisted in DB with model/status/source-hash; reused, never regenerated per view; explicitly labeled AI-generated | ✅ 2 summaries generated & persisted; on-demand; batch refresh ⚠️ pending |
 | Command palette | `⌘K`/`Ctrl+K`, live API-driven results, controlled selection so Enter opens the top result, `⌘/Ctrl+Enter` new tab | ✅ |
 
@@ -121,8 +121,8 @@ smoothing, no interpolation, no fabrication from a single report.
 
 ## 7. Website previews
 
-✅ No third-party screenshot service (decision 2026-10-26). Cards show a self-contained domain
-tile; the in-page preview dialog embeds the site itself on demand. Sites that block embedding get
+✅ No third-party screenshot service (decision 2026-10-26). Cards are text-first (no
+thumbnails); the in-page preview dialog embeds the site itself on demand. Sites that block embedding get
 a graceful notice with an always-available open-in-new-tab action.
 
 ## 8. Data model
@@ -150,10 +150,11 @@ server-side (disclosed in the privacy page); `rel="noopener noreferrer"` on exte
 
 ## 10. SEO
 
-✅ Per-view titles/descriptions, canonical URLs, OG image generated from real stats
-(`scripts/generate-og.ts`), Twitter cards, JSON-LD (`WebSite` + `SearchAction` + `ProfilePage`),
-`/sitemap.xml` and `/robots.txt` metadata routes. Hash-route URLs are the sandbox constraint;
-production deploys swap in path routes (documented in README §Deployment).
+✅ Server-rendered per-route titles/descriptions, canonical URLs from the single configured origin,
+OG image generated from real stats (`scripts/generate-og.ts`), Twitter cards, JSON-LD (`WebSite` +
+`SearchAction` on home, `BreadcrumbList` elsewhere), real 404s, `noindex` on query URLs.
+`/sitemap.xml` lists only canonical pages with sufficient content and uses the real sync time as
+`lastmod`; `/robots.txt` blocks `/api/` and disallows everything on non-production deployments.
 
 ## 11. Performance targets
 

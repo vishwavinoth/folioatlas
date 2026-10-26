@@ -1,46 +1,36 @@
 import type { MetadataRoute } from "next";
 import indexJson from "@/data/portfolios.generated.json";
+import { COLLECTION_DEFS } from "@/lib/portfolio/collections";
+import { loadClientIndex, MIN_TECH_COUNT, SITE_URL } from "@/lib/site/index-data";
 
 /**
- * Canonical indexable URLs (PRD §11.3). Only meaningful pages are included:
- * no search-permutation pages, no empty categories, no query URLs.
- * MIN_TECH_COUNT keeps near-empty technology pages out of the sitemap.
+ * Canonical indexable URLs (PRD §11.3): no query URLs, no filter permutations,
+ * no empty categories. `lastModified` is the real data-sync time from the
+ * generated artifact — never an invented per-page timestamp.
  */
-const MIN_TECH_COUNT = 5;
-
 export default function sitemap(): MetadataRoute.Sitemap {
-  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const data = indexJson as unknown as {
-    technologies: Array<{ slug: string; count: number }>;
-  };
-  const now = new Date();
+  const index = loadClientIndex();
+  const synced = new Date(index.generatedAt);
+  const url = (path: string) => `${SITE_URL}${path}`;
+  const entry = (path: string, changeFrequency: "daily" | "weekly" | "monthly" | "yearly", priority: number) => ({
+    url: url(path),
+    changeFrequency,
+    priority,
+    lastModified: synced,
+  });
 
-  const staticRoutes: MetadataRoute.Sitemap = [
-    { url: `${SITE_URL}/`, changeFrequency: "daily", priority: 1, lastModified: now },
-    { url: `${SITE_URL}/#/portfolios`, changeFrequency: "daily", priority: 0.9, lastModified: now },
-    { url: `${SITE_URL}/#/technologies`, changeFrequency: "weekly", priority: 0.7, lastModified: now },
-    { url: `${SITE_URL}/#/about`, changeFrequency: "monthly", priority: 0.4, lastModified: now },
-    { url: `${SITE_URL}/#/methodology`, changeFrequency: "monthly", priority: 0.4, lastModified: now },
-    { url: `${SITE_URL}/#/privacy`, changeFrequency: "yearly", priority: 0.3, lastModified: now },
+  // Only letters that actually have entries (no empty pages).
+  const letters = new Set((indexJson as unknown as { portfolios: Array<{ letter: string }> }).portfolios.map((p) => p.letter.toLowerCase()));
+
+  return [
+    entry("/", "daily", 1),
+    entry("/portfolios", "daily", 0.9),
+    entry("/technologies", "weekly", 0.7),
+    ...index.technologies.filter((t) => t.count >= MIN_TECH_COUNT).map((t) => entry(`/technologies/${t.slug}`, "weekly", 0.6)),
+    ...COLLECTION_DEFS.map((c) => entry(`/collections/${c.slug}`, "weekly", 0.5)),
+    ..."abcdefghijklmnopqrstuvwxyz".split("").filter((l) => letters.has(l)).map((l) => entry(`/portfolios/letter/${l}`, "weekly", 0.5)),
+    { url: url("/about"), changeFrequency: "monthly", priority: 0.4 },
+    { url: url("/methodology"), changeFrequency: "monthly", priority: 0.4 },
+    { url: url("/privacy"), changeFrequency: "yearly", priority: 0.3 },
   ];
-
-  const techRoutes: MetadataRoute.Sitemap = data.technologies
-    .filter((t) => t.count >= MIN_TECH_COUNT)
-    .map((t) => ({
-      url: `${SITE_URL}/#/technologies/${t.slug}`,
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-      lastModified: now,
-    }));
-
-  const letterRoutes: MetadataRoute.Sitemap = "abcdefghijklmnopqrstuvwxyz"
-    .split("")
-    .map((letter) => ({
-      url: `${SITE_URL}/#/portfolios/letter/${letter}`,
-      changeFrequency: "weekly" as const,
-      priority: 0.5,
-      lastModified: now,
-    }));
-
-  return [...staticRoutes, ...techRoutes, ...letterRoutes];
 }

@@ -7,15 +7,15 @@ import { Search, ArrowRight, Compass, LayoutGrid, Info, Shield, Keyboard, Corner
 import type { SearchResult } from "@/lib/api-types";
 import { useApi, useDebounced } from "@/hooks/use-api";
 import { SHORTCUT_DOCS } from "@/hooks/use-shortcuts";
-import { navigateHash } from "@/lib/router/hash-router";
+import { navigateTo } from "@/lib/router/router";
 import { technologyLabel } from "@/lib/portfolio/classify";
 
 const NAV_COMMANDS = [
-  { href: "#/", label: "Go to Discover", icon: Compass },
-  { href: "#/portfolios", label: "Browse all portfolios", icon: LayoutGrid },
-  { href: "#/technologies", label: "Browse focus areas", icon: Search },
-  { href: "#/about", label: "About FolioAtlas", icon: Info },
-  { href: "#/methodology", label: "Methodology & data provenance", icon: Shield },
+  { href: "/", label: "Go to Discover", icon: Compass },
+  { href: "/portfolios", label: "Browse all portfolios", icon: LayoutGrid },
+  { href: "/technologies", label: "Browse focus areas", icon: Search },
+  { href: "/about", label: "About FolioAtlas", icon: Info },
+  { href: "/methodology", label: "Methodology & data provenance", icon: Shield },
 ];
 
 /**
@@ -60,10 +60,10 @@ export function CommandPalette({
   const runItem = (href: string, newTab: boolean) => {
     onOpenChange(false);
     if (newTab) {
-      const url = `${window.location.origin}${window.location.pathname}${href}`;
+      const url = `${window.location.origin}${href}`;
       window.open(url, "_blank", "noopener,noreferrer");
     } else {
-      navigateHash(href);
+      navigateTo(href);
     }
   };
 
@@ -85,7 +85,7 @@ export function CommandPalette({
             <span className="text-sm text-[var(--fa-text-secondary)]">
               No matches for “{query}”.
               <a
-                href={`#/portfolios?q=${encodeURIComponent(query)}`}
+                href={`/portfolios?q=${encodeURIComponent(query)}`}
                 onClick={() => onOpenChange(false)}
                 className="ml-1 text-[var(--fa-accent)] hover:underline"
               >
@@ -104,7 +104,7 @@ export function CommandPalette({
               <CommandItem
                 key={p.id}
                 value={`portfolio-${p.id}`}
-                onSelect={() => runItem(`#/portfolio/${p.slug}`, false)}
+                onSelect={() => runItem(`/portfolio/${p.slug}`, false)}
                 className="gap-3"
               >
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--fa-accent)]/10 text-xs font-semibold text-[var(--fa-accent)]">

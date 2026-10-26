@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/materials/theme-provider";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+import { SITE_URL } from "@/lib/site/index-data";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -20,12 +20,10 @@ export const metadata: Metadata = {
     "web developer portfolio",
     "open source",
   ],
-  alternates: { canonical: "/" },
   openGraph: {
     title: "FolioAtlas — Discover Developer Portfolios",
     description:
       "One beautiful place to discover real developer portfolios, sourced from an open-source community directory.",
-    url: "/",
     siteName: "FolioAtlas",
     type: "website",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "FolioAtlas — discover real developer portfolios" }],

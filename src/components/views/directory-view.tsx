@@ -17,7 +17,8 @@ import type { AiSearchResponse, SearchResult, TechnologyMeta, WirePortfolio } fr
 import type { ClientIndex } from "@/lib/portfolio/types";
 import { useApi } from "@/hooks/use-api";
 import { paletteControls } from "@/components/command/palette-host";
-import { buildHref, navigateHash, type Route } from "@/lib/router/hash-router";
+import { buildHref, navigateTo, type Route } from "@/lib/router/router";
+import { useFeatures } from "@/lib/features/context";
 import { collectionBySlug } from "@/lib/portfolio/collections";
 import { technologyLabel } from "@/lib/portfolio/classify";
 import { GlassSearchField } from "@/components/search/glass-search-field";
@@ -51,7 +52,7 @@ type DirectoryProps = {
 
 /**
  * Directory view (PRD §5, §6) — server-backed keyword search, AI search and
- * advanced filters. All filter/search state lives in the hash query string so
+ * advanced filters. All filter/search state lives in the URL query string so
  * every result set is a shareable direct link.
  */
 export function DirectoryView({ index, route, hideHeading = false }: DirectoryProps) {
@@ -74,7 +75,8 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
   const hasSummary = route.query.get("hasSummary") === "true";
   const addedWithin = route.query.get("addedWithin");
   const sortParam = route.query.get("sort");
-  const aiParam = route.query.get("ai") === "1";
+  const { ai: aiEnabled } = useFeatures();
+  const aiParam = aiEnabled && route.query.get("ai") === "1";
   const pageParam = Math.max(1, Number(route.query.get("page") ?? "1") || 1);
 
   const [mode, setMode] = useState<"keyword" | "ai">(aiParam ? "ai" : "keyword");
@@ -120,7 +122,7 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
   );
 
   const setQuery = (patch: Record<string, string | null>) => {
-    navigateHash(buildHref(route.path, { ...baseParams(), ...patch }), true);
+    navigateTo(buildHref(route.path, { ...baseParams(), ...patch }), true);
   };
 
   const toggleTech = (slug: string) => {
@@ -129,7 +131,7 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
   };
 
   const clearAll = () => {
-    navigateHash(buildHref("/portfolios", { ai: mode === "ai" ? "1" : null }));
+    navigateTo(buildHref("/portfolios", { ai: mode === "ai" ? "1" : null }));
   };
 
   // ── AI search ────────────────────────────────────────────────────────
@@ -195,7 +197,8 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
         </header>
       )}
 
-      {/* Mode toggle */}
+      {/* Mode toggle (only when an AI provider is configured) */}
+      {aiEnabled && (
       <div className="mt-5 flex items-center gap-2" role="tablist" aria-label="Search mode">
         {(["keyword", "ai"] as const).map((m) => (
           <button
@@ -214,6 +217,7 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
           </button>
         ))}
       </div>
+      )}
 
       {/* Search inputs */}
       {mode === "keyword" ? (
@@ -480,6 +484,7 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
           </Popover>
 
           {/* Has AI summary toggle */}
+          {aiEnabled && (
           <button
             type="button"
             aria-pressed={hasSummary}
@@ -493,6 +498,7 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
             Has AI summary
           </button>
+          )}
 
           <button
             type="button"
@@ -517,7 +523,7 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
           {letter && (
             <FilterChip
               label={`Letter ${letter}`}
-              onRemove={() => navigateHash(buildHref("/portfolios", { ...baseParams(), letter: null }))}
+              onRemove={() => navigateTo(buildHref("/portfolios", { ...baseParams(), letter: null }))}
             />
           )}
           {site !== "any" && (
@@ -561,7 +567,7 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
           <EmptyState
             query={mode === "keyword" ? urlQ : aiQuery}
             onClearFilters={clearAll}
-            suggestions={index.technologies.slice(0, 6).map((t) => ({ label: t.label, href: `#/technologies/${t.slug}` }))}
+            suggestions={index.technologies.slice(0, 6).map((t) => ({ label: t.label, href: `/technologies/${t.slug}` }))}
           />
         ) : result ? (
           <>
@@ -579,7 +585,7 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
                     buildHref(route.path, { ...baseParams(), page: nextPage > 1 ? String(nextPage) : null })
                   }
                   onPageFallback={(nextPage) => {
-                    navigateHash(buildHref(route.path, { ...baseParams(), page: nextPage > 1 ? String(nextPage) : null }));
+                    navigateTo(buildHref(route.path, { ...baseParams(), page: nextPage > 1 ? String(nextPage) : null }));
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                 />

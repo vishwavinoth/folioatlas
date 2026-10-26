@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { BadgeCheck, Compass, ExternalLink, ShieldCheck, Sparkles, Tags, Users } from "lucide-react";
+import { BadgeCheck, Compass, ExternalLink, Lock, ShieldCheck, Sparkles, Tags, Users } from "lucide-react";
 import type { StatsResponse } from "@/lib/api-types";
 import { useApi } from "@/hooks/use-api";
 import { GlassSearchField } from "@/components/search/glass-search-field";
@@ -9,6 +9,8 @@ import { PortfolioCard } from "@/components/directory/portfolio-card";
 import { TechnologyChip } from "@/components/directory/technology-chip";
 import { GrowthChart } from "@/components/analytics/growth-chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { buildHref, navigateTo } from "@/lib/router/router";
+import { useFeatures } from "@/lib/features/context";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
@@ -29,10 +31,11 @@ function HeroStatsSkeleton() {
 
 export function HomeView() {
   const { data, loading } = useApi<StatsResponse>("/api/stats");
+  const { ai } = useFeatures();
 
   const quickFilters = useMemo(() => {
     if (!data) return [];
-    return data.technologies.slice(0, 6).map((t) => ({ label: t.label, href: `#/technologies/${t.slug}` }));
+    return data.technologies.slice(0, 6).map((t) => ({ label: t.label, href: `/technologies/${t.slug}` }));
   }, [data]);
 
   const stats = data?.stats;
@@ -53,7 +56,7 @@ export function HomeView() {
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-pretty text-[15px] leading-relaxed text-[var(--fa-text-secondary)] sm:text-base">
           Explore a directory of real developer portfolios, synced from an open-source community repository with
-          verifiable history. Search by keyword — or ask in plain language with AI search.
+          verifiable history. {ai ? "Search by keyword — or ask in plain language with AI search." : "Search by name, URL or focus area."}
         </p>
 
         <div className="mx-auto mt-7 max-w-xl">
@@ -61,7 +64,7 @@ export function HomeView() {
             value=""
             size="lg"
             onChange={(q) => {
-              window.location.hash = q ? `#/portfolios?q=${encodeURIComponent(q)}` : "#/portfolios";
+              navigateTo(q ? buildHref("/portfolios", { q }) : "/portfolios");
             }}
             placeholder="Try “react”, “flutter”, or a developer’s name…"
             label="Search the directory"
@@ -88,14 +91,16 @@ export function HomeView() {
               </a>
             ))
           )}
+          {ai && (
           <a
-            href="#/portfolios?ai=1"
+            href="/portfolios?ai=1"
             className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--fa-accent)]/10 px-3.5 text-[13px] font-medium text-[var(--fa-accent)] transition-colors hover:bg-[var(--fa-accent)]/15"
             title="Search with natural language"
           >
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
             AI search
           </a>
+          )}
         </div>
 
         {/* Verified platform stats */}
@@ -141,7 +146,7 @@ export function HomeView() {
             </p>
           </div>
           <a
-            href="#/portfolios?sort=newest"
+            href="/portfolios?sort=newest"
             className="hidden shrink-0 items-center gap-1 text-sm font-medium text-[var(--fa-accent)] hover:underline sm:inline-flex"
           >
             Browse newest
@@ -169,7 +174,7 @@ export function HomeView() {
             : data.collections.map((c) => (
                 <a
                   key={c.slug}
-                  href={`#/collections/${c.slug}`}
+                  href={`/collections/${c.slug}`}
                   className="surface-card motion-lift group rounded-2xl p-5"
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -212,18 +217,18 @@ export function HomeView() {
           <div>
             <h2 className="text-xl font-semibold tracking-tight">Explore all portfolios</h2>
             <p className="mx-auto mt-1 max-w-md text-sm text-[var(--fa-text-secondary)]">
-              Browse the complete directory with keyword search, AI search, advanced filters and sorting.
+              Browse the complete directory with {ai ? "keyword search, AI search," : "search,"} advanced filters and sorting.
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <a
-              href="#/portfolios"
+              href="/portfolios"
               className="inline-flex h-11 items-center rounded-full bg-[var(--fa-accent)] px-6 text-[15px] font-medium text-white shadow-sm transition-colors hover:bg-[var(--fa-accent-strong)]"
             >
               Explore portfolios
             </a>
             <a
-              href="#/technologies"
+              href="/technologies"
               className="glass-clear inline-flex h-11 items-center rounded-full px-6 text-[15px] font-medium transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.08]"
             >
               Browse technologies
@@ -244,7 +249,7 @@ export function HomeView() {
               return (
                 <li key={letter}>
                   <a
-                    href={`#/portfolios/letter/${lower}`}
+                    href={`/portfolios/letter/${lower}`}
                     className="surface-card motion-lift flex h-10 w-10 items-center justify-center rounded-xl text-sm font-medium transition-colors hover:text-[var(--fa-accent)]"
                     aria-label={`Portfolios starting with ${letter}`}
                   >
@@ -264,8 +269,8 @@ export function HomeView() {
         </h2>
         <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[var(--fa-text-secondary)]">
           Every entry links back to the upstream repository. Invalid URLs are quarantined, duplicates are reported,
-          growth history is derived from verifiable commits, and AI outputs are clearly labeled — nothing about the
-          directory is fabricated.
+          growth history is derived from verifiable commits{ai ? ", and AI outputs are clearly labeled" : ""} — nothing
+          about the directory is fabricated.
         </p>
         <div className="mt-5 grid gap-4 sm:grid-cols-3">
           {[
@@ -273,23 +278,31 @@ export function HomeView() {
               icon: ExternalLink,
               title: "Canonical source",
               body: `Entries come from the ${stats?.lastSyncCommit ? "upstream repository pinned to the exact commit shown in the footer" : "upstream repository"}, kept in sync with verifiable commit provenance.`,
-              href: "#/methodology",
+              href: "/methodology",
               link: "How syncing works",
             },
             {
               icon: ShieldCheck,
               title: "Verified history",
               body: `Growth charts use ${stats?.historySnapshotCount.toLocaleString() ?? "recorded"} snapshots derived from real upstream commits and successful syncs — never from a single generated report.`,
-              href: "#/methodology",
+              href: "/methodology",
               link: "Data provenance",
             },
-            {
-              icon: Tags,
-              title: "Labeled AI features",
-              body: `${stats?.aiSummaryCount.toLocaleString() ?? "0"} AI summaries stored so far. Every AI output is labeled as such, grounded only in source data, and falls back gracefully.`,
-              href: "#/methodology",
-              link: "AI guardrails",
-            },
+            ai
+              ? {
+                  icon: Tags,
+                  title: "Labeled AI features",
+                  body: `${stats?.aiSummaryCount.toLocaleString() ?? "0"} AI summaries stored so far. Every AI output is labeled as such, grounded only in source data, and falls back gracefully.`,
+                  href: "/methodology",
+                  link: "AI guardrails",
+                }
+              : {
+                  icon: Lock,
+                  title: "Privacy first",
+                  body: "No accounts, no tracking cookies and no third-party screenshot services. Portfolio websites are only contacted when you choose to open them.",
+                  href: "/privacy",
+                  link: "Privacy details",
+                },
           ].map(({ icon: Icon, title, body, href, link }) => (
             <div key={title} className="surface-card rounded-2xl p-5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--fa-accent)]/10 text-[var(--fa-accent)]">

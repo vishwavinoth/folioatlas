@@ -2,21 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Compass, Github, Menu, Search, X } from "lucide-react";
-import { buildHref, useHashRoute, type Route } from "@/lib/router/hash-router";
+import { buildHref, useRoute, type Route } from "@/lib/router/router";
 import { paletteControls } from "@/components/command/palette-host";
 import { ThemeToggle } from "./theme-toggle";
 
 const NAV_ITEMS = [
-  { href: "#/", label: "Discover", match: (r: Route) => r.path === "/" },
-  { href: "#/portfolios", label: "Portfolios", match: (r: Route) => r.path.startsWith("/portfolios") },
-  { href: "#/technologies", label: "Technologies", match: (r: Route) => r.path.startsWith("/technologies") },
-  { href: "#/about", label: "About", match: (r: Route) => r.path.startsWith("/about") },
+  { href: "/", label: "Discover", match: (r: Route) => r.path === "/" },
+  { href: "/portfolios", label: "Portfolios", match: (r: Route) => r.path.startsWith("/portfolios") },
+  { href: "/technologies", label: "Technologies", match: (r: Route) => r.path.startsWith("/technologies") },
+  { href: "/about", label: "About", match: (r: Route) => r.path.startsWith("/about") },
 ];
 
 const SOURCE_REPO_URL = "https://github.com/emmabostian/developer-portfolios";
 
 export function GlassNavigation() {
-  const { route } = useHashRoute();
+  const { route } = useRoute();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +53,7 @@ export function GlassNavigation() {
         className="glass mx-auto flex h-14 max-w-5xl items-center gap-1 rounded-2xl px-3 sm:px-4"
       >
         <a
-          href="#/"
+          href="/"
           className="mr-1 flex items-center gap-2 rounded-lg px-1.5 py-1.5 font-semibold tracking-tight"
           aria-label="FolioAtlas home"
         >
@@ -112,7 +112,10 @@ export function GlassNavigation() {
             <span className="hidden 2xl:inline">Source</span>
           </a>
 
-          <ThemeToggle />
+          {/* Theme control lives in the mobile menu to keep the compact bar uncluttered (PRD §4.1). */}
+          <div className="hidden md:flex">
+            <ThemeToggle />
+          </div>
 
           {/* Mobile menu button */}
           <button
@@ -167,6 +170,10 @@ export function GlassNavigation() {
               </a>
             </li>
           </ul>
+          <div className="mt-1 flex items-center justify-between border-t border-[var(--surface-border)] px-4 pb-1 pt-3">
+            <span className="text-[15px] text-[var(--fa-text-secondary)]">Appearance</span>
+            <ThemeToggle />
+          </div>
         </div>
       )}
     </header>

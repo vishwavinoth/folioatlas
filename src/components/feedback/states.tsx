@@ -84,7 +84,7 @@ export function ErrorState({
         </button>
       ) : (
         <a
-          href="#/"
+          href="/"
           className="mt-5 inline-flex h-10 items-center rounded-full bg-[var(--fa-accent)] px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--fa-accent-strong)]"
         >
           Back to homepage
@@ -111,7 +111,7 @@ export function NotFoundState({
         {detail ?? "The page you were looking for doesn’t exist. It may have moved, or the link may be outdated."}
       </p>
       <a
-        href="#/"
+        href="/"
         className="mt-5 inline-flex h-10 items-center rounded-full bg-[var(--fa-accent)] px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--fa-accent-strong)]"
       >
         Return to homepage

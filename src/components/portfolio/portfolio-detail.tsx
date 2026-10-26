@@ -10,7 +10,7 @@ import {
   ExternalLink,
   Eye,
   Github,
-  Link2,
+  Globe,
   RefreshCw,
   Share2,
   ShieldCheck,
@@ -22,7 +22,7 @@ import { useApi } from "@/hooks/use-api";
 import { technologyLabel } from "@/lib/portfolio/classify";
 import { TechnologyChip } from "@/components/directory/technology-chip";
 import { PortfolioCard } from "@/components/directory/portfolio-card";
-import { SiteTile } from "@/components/preview/site-tile";
+import { useFeatures } from "@/lib/features/context";
 import { PreviewDialog } from "@/components/preview/preview-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -33,9 +33,17 @@ function fmtDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 
+function prettyHost(url: string): string {
+  try {
+    return new URL(url).host.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
 /** Profile URL for the current deployment (share/copy target). */
 function profileUrl(slug: string): string {
-  return `${window.location.origin}${window.location.pathname}#/portfolio/${slug}`;
+  return `${window.location.origin}/portfolio/${slug}`;
 }
 
 export function PortfolioDetail({ slug }: { slug: string }) {
@@ -50,7 +58,8 @@ export function PortfolioDetail({ slug }: { slug: string }) {
   // Regenerate is offered when no complete summary exists or the user asks
   // for a refresh; result replaces the local view immediately.
   const summary = summaryOverride ?? portfolio?.aiSummary ?? null;
-  const canGenerate = !generating && (!summary || true); // refresh always allowed (rate-limited server-side)
+  // Generation needs a configured AI provider; refresh is rate-limited server-side.
+  const { ai: canGenerate } = useFeatures();
 
   const generateSummary = async () => {
     if (!portfolio) return;
@@ -93,46 +102,6 @@ export function PortfolioDetail({ slug }: { slug: string }) {
     copyLink();
   };
 
-  // Document metadata + JSON-LD for the profile (best-effort in a hash-routed SPA).
-  useEffect(() => {
-    if (!portfolio) return;
-    document.title = `${portfolio.name} — Developer Portfolio | FolioAtlas`;
-
-    const setMeta = (selector: string, attr: string, value: string) => {
-      let el = document.head.querySelector(selector) as HTMLMetaElement | null;
-      if (!el) {
-        el = document.createElement("meta");
-        if (selector.includes("property=")) el.setAttribute("property", selector.replace(/.*property="(.*?)".*/, "$1"));
-        else el.setAttribute("name", selector.replace(/.*name="(.*?)".*/, "$1"));
-        document.head.appendChild(el);
-      }
-      el.setAttribute(attr, value);
-    };
-    setMeta('meta[name="description"]', "content", `${portfolio.name}'s developer portfolio${portfolio.role ? ` — ${portfolio.role}` : ""}. Discover more real developer portfolios on FolioAtlas.`);
-    setMeta('meta[property="og:title"]', "content", `${portfolio.name} — Developer Portfolio | FolioAtlas`);
-    setMeta('meta[property="og:url"]', "content", profileUrl(portfolio.slug));
-
-    const script = document.createElement("script");
-    script.type = "application/ld+json";
-    script.id = "fa-profile-jsonld";
-    script.textContent = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "ProfilePage",
-      mainEntity: {
-        "@type": "Person",
-        name: portfolio.name,
-        url: portfolio.portfolioUrl,
-        ...(portfolio.githubProfileUrl ? { sameAs: [portfolio.githubProfileUrl] } : {}),
-        ...(portfolio.role ? { description: portfolio.role } : {}),
-        ...(portfolio.technologies.length > 0 ? { knowsAbout: portfolio.technologies.map(technologyLabel) } : {}),
-      },
-    });
-    document.head.appendChild(script);
-    return () => {
-      script.remove();
-    };
-  }, [portfolio]);
-
   const related = useMemo(() => data?.related ?? [], [data]);
 
   if (loading) return <DetailSkeleton />;
@@ -159,7 +128,7 @@ export function PortfolioDetail({ slug }: { slug: string }) {
   return (
     <div className="motion-fade-in mx-auto w-full max-w-5xl px-4 pb-12 pt-8 sm:pt-10">
       <a
-        href="#/portfolios"
+        href="/portfolios"
         className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--fa-text-secondary)] transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -205,24 +174,16 @@ export function PortfolioDetail({ slug }: { slug: string }) {
                 </a>
               </Button>
             )}
-            <Button variant="outline" asChild>
+            <Button asChild>
               <a href={portfolio.portfolioUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="mr-2 h-4 w-4" aria-hidden="true" />
                 Visit website
                 <span className="sr-only">(opens in a new tab)</span>
               </a>
             </Button>
-            <Button variant="outline" onClick={() => setPreviewOpen(true)}>
-              <Eye className="mr-2 h-4 w-4" aria-hidden="true" />
-              Preview
-            </Button>
-            <Button variant="ghost" onClick={share}>
-              <Share2 className="mr-2 h-4 w-4" aria-hidden="true" />
-              Share
-            </Button>
-            <Button variant="ghost" onClick={copyLink} aria-label="Copy profile link">
-              {copied ? <Check className="h-4 w-4 text-[var(--fa-success)]" aria-hidden="true" /> : <Link2 className="h-4 w-4" aria-hidden="true" />}
-              <span className="sr-only">Copy profile link</span>
+            <Button variant="outline" onClick={share}>
+              {copied ? <Check className="mr-2 h-4 w-4 text-[var(--fa-success)]" aria-hidden="true" /> : <Share2 className="mr-2 h-4 w-4" aria-hidden="true" />}
+              {copied ? "Link copied" : "Share"}
             </Button>
           </div>
         </div>
@@ -231,35 +192,44 @@ export function PortfolioDetail({ slug }: { slug: string }) {
       <div className="mt-8 grid gap-6 lg:grid-cols-5">
         {/* Main column */}
         <div className="flex flex-col gap-6 lg:col-span-3">
-          {/* Preview */}
-          <section aria-labelledby="preview-heading">
-            <h2 id="preview-heading" className="text-[15px] font-semibold tracking-tight">
-              Website preview
+          {/* Website */}
+          <section aria-labelledby="website-heading" className="surface-card rounded-2xl p-4 sm:p-5">
+            <h2 id="website-heading" className="text-[15px] font-semibold tracking-tight">
+              Website
             </h2>
-            <button
-              type="button"
-              onClick={() => setPreviewOpen(true)}
-              className="mt-2 block w-full text-left"
-              aria-label={`Open larger preview of ${portfolio.name}'s website`}
-            >
-              <SiteTile url={portfolio.portfolioUrl} label={portfolio.name} className="transition-shadow hover:shadow-md" />
-            </button>
-            <div className="mt-2 flex items-center justify-between gap-3">
-              <span className="truncate text-xs text-[var(--fa-text-secondary)]">{portfolio.portfolioUrl}</span>
-              <a
-                href={portfolio.portfolioUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-[var(--fa-accent)] hover:underline"
-              >
-                Open in new tab
-                <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
-                <span className="sr-only">(opens in a new tab)</span>
-              </a>
+            <div className="mt-3 flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--fa-accent)]/10 text-[var(--fa-accent)]">
+                <Globe className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-[15px] font-medium">{prettyHost(portfolio.portfolioUrl)}</p>
+                <p className="truncate text-xs text-[var(--fa-text-secondary)]" title={portfolio.portfolioUrl}>
+                  {portfolio.portfolioUrl}
+                </p>
+                {portfolio.portfolioUrl.startsWith("http://") && (
+                  <p className="mt-1 text-xs text-[var(--fa-text-secondary)]">
+                    This site is listed without HTTPS; your browser may show a security warning.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)}>
+                <Eye className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                Preview in page
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <a href={portfolio.portfolioUrl} target="_blank" rel="noopener noreferrer">
+                  Open in new tab
+                  <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                  <span className="sr-only">(opens in a new tab)</span>
+                </a>
+              </Button>
             </div>
           </section>
 
-          {/* AI summary */}
+          {/* AI summary (hidden entirely when there is none and AI is not configured) */}
+          {(summary || canGenerate) && (
           <section aria-labelledby="ai-heading" className="rounded-2xl border border-[var(--fa-accent)]/20 bg-[var(--fa-accent)]/[0.04] p-4 sm:p-5">
             <h2 id="ai-heading" className="flex items-center gap-1.5 text-[15px] font-semibold tracking-tight">
               <Sparkles className="h-4 w-4 text-[var(--fa-accent)]" aria-hidden="true" />
@@ -299,6 +269,7 @@ export function PortfolioDetail({ slug }: { slug: string }) {
               </Button>
             )}
           </section>
+          )}
 
           {/* Technologies */}
           {portfolio.technologies.length > 0 && (
@@ -308,14 +279,14 @@ export function PortfolioDetail({ slug }: { slug: string }) {
               </h2>
               <p className="mt-1 text-xs text-[var(--fa-text-secondary)]">
                 Derived transparently from the role text supplied upstream —{" "}
-                <a href="#/methodology" className="text-[var(--fa-accent)] hover:underline">
+                <a href="/methodology" className="text-[var(--fa-accent)] hover:underline">
                   see methodology
                 </a>
                 .
               </p>
               <div className="mt-2.5 flex flex-wrap gap-2">
                 {portfolio.technologies.map((slug) => (
-                  <TechnologyChip key={slug} label={technologyLabel(slug)} href={`#/technologies/${slug}`} />
+                  <TechnologyChip key={slug} label={technologyLabel(slug)} href={`/technologies/${slug}`} />
                 ))}
               </div>
             </section>

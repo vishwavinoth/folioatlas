@@ -3,7 +3,8 @@
 import { Component, useEffect, useRef, type ReactNode } from "react";
 import type { ClientIndex } from "@/lib/portfolio/types";
 import { collectionBySlug } from "@/lib/portfolio/collections";
-import { useHashRoute, type Route } from "@/lib/router/hash-router";
+import { navigateTo, useRoute, type Route } from "@/lib/router/router";
+import { FeaturesProvider, type Features } from "@/lib/features/context";
 import { GlassNavigation } from "@/components/navigation/glass-navigation";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { HomeView } from "@/components/views/home-view";
@@ -13,43 +14,6 @@ import { AboutView, MethodologyView, PrivacyView } from "@/components/views/cont
 import { ErrorState, NotFoundState } from "@/components/feedback/states";
 import { PortfolioDetail } from "@/components/portfolio/portfolio-detail";
 import { CommandPaletteHost } from "@/components/command/palette-host";
-
-/** Per-view document titles (keeps history entries and shares descriptive). */
-function titleFor(route: Route, index: ClientIndex): string {
-  const p = route.path;
-  if (p === "/" || p === "") return "FolioAtlas — Discover Developer Portfolios";
-  if (p.startsWith("/portfolio/")) {
-    const slug = p.split("/")[2] ?? "";
-    const name = slug
-      .split("-")
-      .slice(0, -1)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
-    return name ? `${name} — Developer Portfolio | FolioAtlas` : "Developer Portfolio | FolioAtlas";
-  }
-  if (p.startsWith("/portfolios/letter/")) {
-    const letter = p.split("/")[3]?.toUpperCase() ?? "";
-    return `Portfolios starting with ${letter} | FolioAtlas`;
-  }
-  if (p.startsWith("/collections/")) {
-    const slug = p.split("/")[2] ?? "";
-    const col = collectionBySlug(slug);
-    return col ? `${col.label} Developer Portfolios | FolioAtlas` : "Page not found | FolioAtlas";
-  }
-  if (p.startsWith("/technologies/")) {
-    const slug = p.split("/")[2] ?? "";
-    const known = index.technologies.some((t) => t.slug === slug);
-    if (!known) return "Page not found | FolioAtlas";
-    const label = index.technologies.find((t) => t.slug === slug)?.label ?? slug;
-    return `${label} Developer Portfolios | FolioAtlas`;
-  }
-  if (p === "/portfolios") return "Developer Portfolio Directory | FolioAtlas";
-  if (p === "/technologies") return "Browse by Focus Area | FolioAtlas";
-  if (p === "/about") return "About | FolioAtlas";
-  if (p === "/methodology") return "Methodology | FolioAtlas";
-  if (p === "/privacy") return "Privacy | FolioAtlas";
-  return "Page not found | FolioAtlas";
-}
 
 class ViewErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -111,8 +75,39 @@ function renderView(route: Route, index: ClientIndex): ReactNode {
   return <NotFoundState />;
 }
 
-export function FolioAtlasApp({ index }: { index: ClientIndex }) {
-  const { route } = useHashRoute();
+/** Same-origin page links handled by the client router (not API routes or files). */
+function internalHref(anchor: HTMLAnchorElement): string | null {
+  if (anchor.target && anchor.target !== "_self") return null;
+  if (anchor.hasAttribute("download")) return null;
+  const href = anchor.getAttribute("href");
+  if (!href || !href.startsWith("/") || href.startsWith("//")) return null;
+  if (href.startsWith("/api/") || /\.[a-z0-9]+(\?|$)/i.test(href.split("#")[0])) return null;
+  return href;
+}
+
+export function FolioAtlasApp({ index, features }: { index: ClientIndex; features: Features }) {
+  const { route } = useRoute();
+
+  // Client-side transitions for plain anchors; modifier clicks keep native behavior.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const anchor = (e.target as Element | null)?.closest?.("a");
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+      const href = internalHref(anchor);
+      if (!href) return;
+      e.preventDefault();
+      navigateTo(href);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
+
+  // Links shared before clean URLs ("/#/portfolios?q=…") keep working.
+  useEffect(() => {
+    const legacy = window.location.hash;
+    if (legacy.startsWith("#/")) navigateTo(legacy.slice(1) || "/", true);
+  }, []);
 
   // Scroll to top when the view (path) changes, not on query tweaks.
   const prevPath = useRef(route.path);
@@ -123,13 +118,8 @@ export function FolioAtlasApp({ index }: { index: ClientIndex }) {
     }
   }, [route.path]);
 
-  // Keep document.title in sync with the active view.
-  useEffect(() => {
-    document.title = titleFor(route, index);
-  }, [route, index]);
-
   return (
-    <>
+    <FeaturesProvider value={features}>
       <GlassNavigation />
       <main id="main-content" className="flex-1 pt-[76px]">
         <ViewErrorBoundary>
@@ -144,6 +134,6 @@ export function FolioAtlasApp({ index }: { index: ClientIndex }) {
       </main>
       <SiteFooter index={index} />
       <CommandPaletteHost />
-    </>
+    </FeaturesProvider>
   );
 }

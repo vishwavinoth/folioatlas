@@ -8,7 +8,7 @@ import { CLASSIFICATION_RULES } from "@/lib/portfolio/classify";
 import { TechnologyChip } from "@/components/directory/technology-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DirectoryView } from "./directory-view";
-import type { Route } from "@/lib/router/hash-router";
+import type { Route } from "@/lib/router/router";
 
 /** Technology index — canonical focus areas with real, live counts. */
 export function TechnologiesView({ index }: { index: ClientIndex }) {
@@ -31,7 +31,7 @@ export function TechnologiesView({ index }: { index: ClientIndex }) {
           return (
             <li key={tech.slug}>
               <a
-                href={`#/technologies/${tech.slug}`}
+                href={`/technologies/${tech.slug}`}
                 className="surface-card motion-lift group flex h-full flex-col rounded-2xl p-4"
               >
                 <div className="flex items-center justify-between gap-2">
@@ -58,7 +58,7 @@ export function TechnologiesView({ index }: { index: ClientIndex }) {
 
       <p className="mt-6 text-sm text-[var(--fa-text-secondary)]">
         Missing something? Labels are intentionally conservative —{" "}
-        <a href="#/methodology" className="text-[var(--fa-accent)] hover:underline">
+        <a href="/methodology" className="text-[var(--fa-accent)] hover:underline">
           read how classification works
         </a>
         .
@@ -91,7 +91,7 @@ export function TechnologyLandingView({ slug, index, route }: { slug: string; in
             </span>
             <div>
               <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{label}</h1>
-              <p className="text-sm text-[var(--fa-text-secondary)]">
+              <div className="text-sm text-[var(--fa-text-secondary)]">
                 {loading ? (
                   <Skeleton className="inline-block h-4 w-32 align-middle" />
                 ) : (
@@ -99,13 +99,13 @@ export function TechnologyLandingView({ slug, index, route }: { slug: string; in
                     {(data?.technology.count ?? 0).toLocaleString()} of {index.stats.valid.toLocaleString()} portfolios
                   </>
                 )}
-              </p>
+              </div>
             </div>
           </div>
           <p className="mt-3 text-sm leading-relaxed text-[var(--fa-text-secondary)]">
             {blurb ?? `Portfolios whose supplied role text matches the ${label} classification rules.`} Labels come only
             from role text in the source repository —{" "}
-            <a href="#/methodology" className="text-[var(--fa-accent)] hover:underline">
+            <a href="/methodology" className="text-[var(--fa-accent)] hover:underline">
               methodology
             </a>
             .
@@ -118,7 +118,7 @@ export function TechnologyLandingView({ slug, index, route }: { slug: string; in
               </h2>
               <div className="mt-2 flex flex-wrap gap-2">
                 {data.related.map((t) => (
-                  <TechnologyChip key={t.slug} label={`${t.label} · ${t.count}`} href={`#/technologies/${t.slug}`} />
+                  <TechnologyChip key={t.slug} label={`${t.label} · ${t.count}`} href={`/technologies/${t.slug}`} />
                 ))}
               </div>
             </div>

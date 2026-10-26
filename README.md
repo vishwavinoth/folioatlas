@@ -44,9 +44,10 @@ bun run og                  # regenerate the social preview image from current s
   ranges. Backed exclusively by verified snapshots — upstream git-history commits (with SHAs) and
   recorded sync runs. The chart labels its coverage window and shows an honest empty state when
   history is thinner than the selected range.
-- **Portfolio detail pages** (`#/portfolio/[slug]`): identity, "View GitHub Profile" (labeled when
-  inferred from a github.io domain), website preview with in-page dialog, AI summary, focus areas,
-  related portfolios, source & verification panel, share/copy actions, JSON-LD.
+- **Portfolio detail pages** (`/portfolio/[slug]`): identity, "View GitHub Profile" (labeled when
+  inferred from a github.io domain), website card with in-page preview dialog, AI summary (only
+  when one exists or AI is configured), focus areas, related portfolios, source & verification
+  panel, share action.
 
 ### Search
 - **Keyword search**: server-side, debounced, URL-synced, relevance/name/newest sorting.
@@ -70,8 +71,8 @@ bun run og                  # regenerate the social preview image from current s
 | `?` | Keyboard shortcuts help panel |
 
 ### Website previews
-No screenshot or thumbnail service is used. Cards show a self-contained domain tile; the in-page
-preview dialog embeds the portfolio site itself on demand. Sites that block embedding via
+No screenshot or thumbnail service is used. Cards stay text-first (name, domain, role, focus areas); the
+in-page preview dialog embeds the portfolio site itself on demand. Sites that block embedding via
 security headers get a graceful notice with an always-available open-in-new-tab action.
 
 ## How the data pipeline works
@@ -159,18 +160,20 @@ and the UI falls back to keyword search.
 
 ## Routes (app)
 
-The production deployment exposes the canonical routes; this sandbox serves the root route only,
-so the information architecture is a hash-routed SPA on `/` (e.g. `/#/portfolios?q=react`):
+Clean, server-rendered URLs. Every route gets its own title, description, canonical URL, Open
+Graph tags and JSON-LD from `src/app/[[...slug]]/page.tsx`; unknown paths, letters, technologies,
+collections and portfolio slugs return a real **404**. Search/filter URLs (`?q=…`) are shareable
+but `noindex`. Old `/#/…` links redirect to their clean equivalents.
 
-| Hash route | Purpose |
+| Route | Purpose |
 |---|---|
-| `#/` | Home: hero, stats, growth chart, recent, collections, featured |
-| `#/portfolios` | Directory with search/filters/sort/pagination |
-| `#/portfolios/letter/{a–z}` | Alphabetical browsing |
-| `#/portfolio/{slug}` | Shareable developer profile page |
-| `#/technologies`, `#/technologies/{slug}` | Focus-area index and landing pages |
-| `#/collections/{slug}` | Curated collection (union of focus areas) |
-| `#/about`, `#/methodology`, `#/privacy` | Content pages (incl. AI + provenance documentation) |
+| `/` | Home: hero, stats, growth chart, recent, collections, featured |
+| `/portfolios` | Directory with search/filters/sort/pagination |
+| `/portfolios/letter/{a–z}` | Alphabetical browsing |
+| `/portfolio/{slug}` | Shareable developer profile page |
+| `/technologies`, `/technologies/{slug}` | Focus-area index and landing pages |
+| `/collections/{slug}` | Curated collection (union of focus areas) |
+| `/about`, `/methodology`, `/privacy` | Content pages |
 
 ## Deployment (Vercel)
 
@@ -181,7 +184,7 @@ so the information architecture is a hash-routed SPA on `/` (e.g. `/#/portfolios
    (+ optional `GROQ_API_KEY`). Redeploy after changing them.
 3. Build and start use the framework defaults (`next build` / `next start`); no extra config.
 4. Smoke-test: `/api` → `{"status":"ok","portfolios":2072}`, `/api/stats` 200, `/sitemap.xml`
-   valid XML, one `#/portfolio/[slug]` page, no console errors. A `503 database-not-configured`
+   valid XML, one `/portfolio/[slug]` page, no console errors. A `503 database-not-configured`
    response means the Supabase variables are missing.
 
 ### Scheduled data synchronization

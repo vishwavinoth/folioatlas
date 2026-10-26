@@ -28,17 +28,17 @@ export function SiteFooter({ index }: { index: ClientIndex }) {
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--fa-text-secondary)]">Directory</h2>
               <ul className="mt-3 space-y-2">
-                <li><a className="text-foreground/80 transition-colors hover:text-[var(--fa-accent)]" href="#/portfolios">All portfolios</a></li>
-                <li><a className="text-foreground/80 transition-colors hover:text-[var(--fa-accent)]" href="#/technologies">Focus areas</a></li>
-                <li><a className="text-foreground/80 transition-colors hover:text-[var(--fa-accent)]" href="#/portfolios/letter/a">Browse A–Z</a></li>
+                <li><a className="text-foreground/80 transition-colors hover:text-[var(--fa-accent)]" href="/portfolios">All portfolios</a></li>
+                <li><a className="text-foreground/80 transition-colors hover:text-[var(--fa-accent)]" href="/technologies">Focus areas</a></li>
+                <li><a className="text-foreground/80 transition-colors hover:text-[var(--fa-accent)]" href="/portfolios/letter/a">Browse A–Z</a></li>
               </ul>
             </div>
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--fa-text-secondary)]">Project</h2>
               <ul className="mt-3 space-y-2">
-                <li><a className="text-foreground/80 transition-colors hover:text-[var(--fa-accent)]" href="#/about">About</a></li>
-                <li><a className="text-foreground/80 transition-colors hover:text-[var(--fa-accent)]" href="#/methodology">Methodology</a></li>
-                <li><a className="text-foreground/80 transition-colors hover:text-[var(--fa-accent)]" href="#/privacy">Privacy</a></li>
+                <li><a className="text-foreground/80 transition-colors hover:text-[var(--fa-accent)]" href="/about">About</a></li>
+                <li><a className="text-foreground/80 transition-colors hover:text-[var(--fa-accent)]" href="/methodology">Methodology</a></li>
+                <li><a className="text-foreground/80 transition-colors hover:text-[var(--fa-accent)]" href="/privacy">Privacy</a></li>
               </ul>
             </div>
             <div>

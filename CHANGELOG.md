@@ -2,7 +2,30 @@
 
 All notable changes to FolioAtlas are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning is pragmatic
-(0.x while the product ships from the sandbox environment).
+(0.x until the 1.0 public launch).
+
+## [0.5.0] — 2026-10-26 (clean URLs, SEO, UI polish)
+
+### Changed
+- **Clean, server-rendered URLs** replace the hash-routed SPA (`/portfolios`, `/technologies/react`,
+  `/portfolio/{slug}` …). Each route gets server-side title, description, canonical URL, Open Graph
+  tags and JSON-LD; unknown routes return a real HTTP 404; old `/#/…` links redirect.
+- Sitemap lists real paths only (non-empty letters, technologies with ≥5 entries, collections) and
+  uses the actual sync time as `lastmod`; `robots.txt` blocks `/api/` and all non-production
+  deployments; search/filter URLs are `noindex`.
+- Portfolio cards are text-first: the oversized domain tile is gone and the action row
+  (Details · Visit site · Copy link) fits every grid width.
+- Detail page: compact Website card (with an HTTPS warning for `http://` sites) replaces the empty
+  preview block; duplicate Preview/Copy buttons removed; "Visit website" is the primary action.
+- Focus-area chips no longer show an external-link arrow (they link within the site).
+- Privacy and Methodology pages describe the real production setup (Vercel, Supabase, GitHub
+  avatars, local theme preference, no cookies).
+
+### Fixed
+- AI search, "Generate AI summary" and the "Has AI summary" filter are hidden when no AI provider
+  is configured (PRD: no non-functional buttons).
+- Client-side document titles and an unverifiable `ProfilePage/Person` JSON-LD were removed in
+  favour of server metadata.
 
 ## [0.4.0] — 2026-10-26 (Supabase-only, production deployment)
 

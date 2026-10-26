@@ -2,6 +2,7 @@
 
 import type { ClientIndex } from "@/lib/portfolio/types";
 import { CLASSIFICATION_RULES } from "@/lib/portfolio/classify";
+import { useFeatures } from "@/lib/features/context";
 
 function Prose({ children }: { children: React.ReactNode }) {
   return <div className="fa-prose max-w-2xl">{children}</div>;
@@ -79,7 +80,7 @@ export function AboutView({ index }: { index: ClientIndex }) {
             entr{index.stats.quarantined === 1 ? "y was" : "ies were"} quarantined by validation and{" "}
             {index.stats.duplicatesRemoved} duplicate{index.stats.duplicatesRemoved === 1 ? "" : "s"} removed during
             the last synchronization. The full report is described on the{" "}
-            <a className="text-[var(--fa-accent)] hover:underline" href="#/methodology">
+            <a className="text-[var(--fa-accent)] hover:underline" href="/methodology">
               methodology page
             </a>
             .
@@ -92,6 +93,7 @@ export function AboutView({ index }: { index: ClientIndex }) {
 
 export function MethodologyView({ index }: { index: ClientIndex }) {
   const rules = CLASSIFICATION_RULES;
+  const { ai } = useFeatures();
   return (
     <div className="motion-fade-in mx-auto w-full max-w-5xl px-4 pb-12 pt-8 sm:pt-10">
       <Prose>
@@ -118,8 +120,9 @@ export function MethodologyView({ index }: { index: ClientIndex }) {
                 , commit <code className="rounded bg-black/[0.05] px-1 font-mono text-[13px] dark:bg-white/[0.07]">{index.source.commit.slice(0, 7)}</code>
               </>
             ) : null}
-            ). A scheduled synchronization job fetches the file, parses every entry in the alphabetical sections, and
-            regenerates the index. This site was last synchronized on{" "}
+            ). A daily synchronization job fetches the file, parses every entry in the alphabetical sections, and
+            regenerates the index; each change is reviewed as a pull request before it is loaded into the directory
+            database. This site was last synchronized on{" "}
             {new Date(index.generatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}. If
             upstream is unreachable, the last successfully generated index keeps serving — a failed sync never erases
             good data.
@@ -197,6 +200,7 @@ export function MethodologyView({ index }: { index: ClientIndex }) {
           </p>
         </Section>
 
+        {ai && (
         <Section title="AI features and their guardrails">
           <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
             Two features use language models, and both are clearly labeled. First, <strong className="text-foreground">AI
@@ -210,13 +214,16 @@ export function MethodologyView({ index }: { index: ClientIndex }) {
             standard keyword search — the directory keeps working without AI.
           </p>
         </Section>
+        )}
 
-        <Section title="Website previews">
+        <Section title="Website previews and images">
           <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
-            FolioAtlas uses no screenshot or thumbnail service. The in-page preview embeds the portfolio website
-            itself, only when you open it. If a website refuses embedding, the UI says so explicitly with an
-            open-in-new-tab action. Sites that block embedding do so through their own security headers;
-            FolioAtlas never bypasses those restrictions.
+            FolioAtlas uses no screenshot or thumbnail service and never fetches portfolio websites on the server.
+            The in-page preview embeds the portfolio website itself, only when you open it. If a website refuses
+            embedding, the UI says so explicitly with an open-in-new-tab action; FolioAtlas never bypasses a
+            site&apos;s own security headers. Profile pictures are shown only for entries hosted on{" "}
+            <code className="rounded bg-black/[0.05] px-1 font-mono text-[13px] dark:bg-white/[0.07]">github.io</code>, using the
+            public GitHub avatar of the inferred account; every other entry shows a neutral placeholder.
           </p>
         </Section>
 
@@ -233,6 +240,7 @@ export function MethodologyView({ index }: { index: ClientIndex }) {
 }
 
 export function PrivacyView() {
+  const { ai } = useFeatures();
   return (
     <div className="motion-fade-in mx-auto w-full max-w-5xl px-4 pb-12 pt-8 sm:pt-10">
       <Prose>
@@ -254,9 +262,27 @@ export function PrivacyView() {
             Search, filtering, sorting and pagination run against the directory database on the server, so results are
             consistent and shareable. Search terms travel as ordinary URL query parameters — the same thing you would
             send by loading a link — and are not profiled, tracked, or combined with anything identifying. Filter
-            state lives in the page URL so you can share or bookmark a view; that is the only place it goes. When you
-            use AI search, your query text is sent to the configured language-model provider solely to be parsed into
-            a structured search intent; it is not stored.
+            state lives in the page URL so you can share or bookmark a view; that is the only place it goes.
+            {ai &&
+              " When you use AI search, your query text is sent to the configured language-model provider solely to be parsed into a structured search intent; it is not stored."}
+          </p>
+        </Section>
+
+        <Section title="Hosting and storage">
+          <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
+            The site is hosted on Vercel and the directory data is stored in a Supabase database. Like any web host,
+            these providers process standard request data (such as IP address and user agent) to deliver pages and
+            protect the service; FolioAtlas itself does not store or analyze it. Your browser keeps one preference
+            locally — the light/dark theme you choose — which never leaves your device. No cookies are set.
+          </p>
+        </Section>
+
+        <Section title="Third-party content">
+          <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
+            For entries hosted on <code className="rounded bg-black/[0.05] px-1 font-mono text-[13px] dark:bg-white/[0.07]">github.io</code>, the
+            profile picture loads directly from GitHub, which receives a normal image request from your browser. When
+            you open the in-page preview, the portfolio website is loaded directly in your browser, exactly as if you
+            had visited it. Nothing else on this site loads third-party content.
           </p>
         </Section>
 
@@ -283,7 +309,7 @@ export function PrivacyView() {
             contributors added their own portfolios. This site adds no scraping and collects no additional personal
             information from linked sites. If you are listed and want your entry changed or removed, edit the upstream
             repository — see the{" "}
-            <a className="text-[var(--fa-accent)] hover:underline" href="#/methodology">
+            <a className="text-[var(--fa-accent)] hover:underline" href="/methodology">
               methodology
             </a>{" "}
             for how updates propagate.

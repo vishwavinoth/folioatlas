@@ -1,5 +1,3 @@
-import { ArrowUpRight } from "lucide-react";
-
 export function TechnologyChip({
   label,
   href,
@@ -36,7 +34,6 @@ export function TechnologyChip({
     <>
       <span className="truncate">{label}</span>
       {typeof count === "number" && <span className="opacity-60">{count}</span>}
-      {href && <ArrowUpRight className="h-3 w-3 shrink-0 opacity-60" aria-hidden="true" />}
     </>
   );
 

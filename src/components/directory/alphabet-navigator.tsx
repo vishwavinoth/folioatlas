@@ -1,6 +1,6 @@
 "use client";
 
-import type { Route } from "@/lib/router/hash-router";
+import type { Route } from "@/lib/router/router";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 

@@ -16,9 +16,11 @@ with AI search, AI summaries, verified growth analytics, previews, and a command
 - **Persistence:** Supabase only. Schema in `supabase/migrations/`; the server reads with the
   publishable key and caches the catalog per instance; writes use the service-role key.
 - **Hosting:** Vercel (framework defaults; no standalone output).
-- **Sandbox constraint:** the host exposes only the root `/` route, so the app is a hash-routed
-  SPA on `/` (`src/lib/router/hash-router.ts`). Do not "fix" this into path routes without also
-  removing that constraint — production instructions are in README.
+- **Routing:** clean path URLs. `src/app/[[...slug]]/page.tsx` validates the route (real 404s),
+  generates metadata/JSON-LD on the server and renders the client shell; `src/lib/router/router.ts`
+  wraps the Next router. Plain `<a href="/…">` links are intercepted for client transitions.
+- **Feature flags:** `useFeatures()` (`src/lib/features/context.tsx`) — AI controls render only when
+  `GROQ_API_KEY` is configured (PRD: no non-functional buttons).
 
 ## 2. Repository map
 
@@ -35,7 +37,7 @@ src/lib/supabase/         server.ts (reader/writer clients, paging), types.ts (t
 src/lib/ai/               provider.ts (Groq + extractJson), search-intent.ts (zod),
                           summaries.ts (grounded generation + persistence)
 src/lib/server/           request (validation, serverError, cache headers), rate-limit
-src/lib/router/           hash-router (SPA navigation, URL state)
+src/lib/router/           router.ts (Next router wrapper, URL state)
 src/data/                 GENERATED artifacts — never hand-edit:
                           portfolios.generated.json (2,072 entries), sync-report.generated.json
 scripts/                  sync-portfolios.ts (upstream → artifact), seed-db.ts (artifact → Supabase),
@@ -77,7 +79,7 @@ build is green.
    identities derived from github.io domains must stay labeled `inferred` (`githubSource`).
 4. **AI can shape queries, never invent rows.** AI search output is zod-validated against the
    canonical vocabulary; unknown slugs are dropped; the DB query produces the results.
-5. **Secrets are server-only.** Groq/ScreenshotOne/Supabase-service keys must never appear in
+5. **Secrets are server-only.** Groq / Supabase secret keys must never appear in
    client bundles or be prefixed `NEXT_PUBLIC_`. Preview URLs resolve server-side and redirect.
 6. **A failed sync never deletes data.** Artifacts publish atomically (tmp → validate → rename);
    upstream failures keep previous artifacts; 50%-drop safety gate refuses corrupted publishes.
@@ -95,8 +97,7 @@ build is green.
 - **ESLint forbids `require()`** (`@typescript-eslint/no-require-imports`) — use ESM imports even
   in one-off scripts under `scripts/`.
 - **Hydration safety:** theme uses `useSyncExternalStore`; Radix `useId` mismatches are avoided by
-  keeping `DialogHeader` inside portal content; the router initializes with `"#/"` then aligns in
-  `queueMicrotask`. Follow these patterns; don't introduce render-time DOM writes that differ
+  keeping `DialogHeader` inside portal content. Follow these patterns; don't introduce render-time DOM writes that differ
   server/client.
 - **cmdk:** the palette sets `shouldFilter={false}` and controls the selected value — results come
   from the API, Enter opens the controlled top result. Don't re-enable native filtering.
@@ -104,8 +105,9 @@ build is green.
   `useSyncExternalStore` over `setState` in effects.
 - **Next 16 + Tailwind 4:** config is `tailwind.config.ts` + CSS-first tokens in `globals.css`;
   glass materials live there — extend tokens rather than hardcoding colors in components.
-- **Search params live in the hash** (`#/portfolios?q=...`). Use the hash-router helpers; transient
-  query updates use replace, view changes use push.
+- **Search params live in the URL query** (`/portfolios?q=...`). Use `buildHref` + `navigateTo`;
+  transient query updates use replace (no scroll), view changes use push. New routes must be
+  added to `resolvePage` in `src/app/[[...slug]]/page.tsx` or they will 404.
 - **`.env*` is git-ignored and must stay that way.**
 
 ## 6. Environment variables
@@ -116,7 +118,7 @@ build is green.
   `SUPABASE_SECRET_KEY` for AI summaries and seeding. Missing config → `503
   database-not-configured` (see `serverError`).
 - AI features require `GROQ_API_KEY`; without it AI endpoints return 503 and the UI falls back.
-- No screenshot/thumbnail services: cards use `SiteTile`; the preview dialog iframes the site.
+- No screenshot/thumbnail services: cards are text-first; the preview dialog iframes the site on demand.
 
 ## 7. Working norms
 
