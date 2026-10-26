@@ -28,15 +28,15 @@ Both files are idempotent — re-running them is safe.
 3. **Collect the keys** — Project Settings → API:
    - `NEXT_PUBLIC_SUPABASE_URL` — project URL
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — publishable / anon key (read-only under RLS)
-   - `SUPABASE_SERVICE_ROLE_KEY` — service-role / secret key (**server-only**)
+   - `SUPABASE_SECRET_KEY` — service-role / secret key (**server-only**)
 
 4. **Load the data** (one-time; ~1 minute, clones the upstream repo to replay its history):
    ```bash
-   SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=... bun run db:seed
+   SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SECRET_KEY=... bun run db:seed
    ```
    Expected output ends with `DONE — portfolios: 2072 …`.
 
-5. **Automate future syncs** — add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as GitHub
+5. **Automate future syncs** — add `SUPABASE_URL` and `SUPABASE_SECRET_KEY` as GitHub
    repository secrets. `.github/workflows/sync-database.yml` then re-syncs Supabase whenever a
    data PR is merged (and on manual dispatch).
 

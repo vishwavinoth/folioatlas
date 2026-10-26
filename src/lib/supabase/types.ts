@@ -51,18 +51,6 @@ export type AiSummaryRow = {
   updated_at: string;
 };
 
-export type PreviewRow = {
-  id: string;
-  portfolio_id: string;
-  image_url: string | null;
-  provider: string | null;
-  status: "pending" | "ready" | "unavailable";
-  captured_at: string | null;
-  source_url_hash: string;
-  error_code: string | null;
-  updated_at: string;
-};
-
 export type SyncRunRow = {
   id: string;
   started_at: string;
@@ -104,7 +92,6 @@ export type Database = {
         | "last_seen_at"
       >;
       portfolio_ai_summaries: Table<AiSummaryRow, "portfolio_id" | "source_hash">;
-      portfolio_previews: Table<PreviewRow, "portfolio_id" | "source_url_hash">;
       sync_runs: Table<SyncRunRow, "started_at">;
       portfolio_count_snapshots: Table<SnapshotRow, "recorded_at" | "total_portfolios">;
     };

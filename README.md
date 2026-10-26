@@ -28,7 +28,7 @@ bun run dev                 # start dev server on :3000
 
 bun run lint                # ESLint
 bun run typecheck           # TypeScript
-bun test                    # unit tests (parser, URLs, catalog queries, AI intents, growth, previews)
+bun test                    # unit tests (parser, URLs, catalog queries, AI intents, growth)
 
 bun run sync:data           # regenerate the directory artifact from upstream
 bun run og                  # regenerate the social preview image from current stats
@@ -70,10 +70,8 @@ bun run og                  # regenerate the social preview image from current s
 | `?` | Keyboard shortcuts help panel |
 
 ### Website previews
-Screenshot URLs are resolved **server-side** and redirected through `/api/preview/[slug]`, so
-provider credentials never reach the browser. The default provider needs no credentials; a
-ScreenshotOne key is used when configured; `PREVIEW_PROVIDER=none` disables previews entirely
-(explicit "unavailable" state — never a fabricated screenshot). Sites that block embedding via
+No screenshot or thumbnail service is used. Cards show a self-contained domain tile; the in-page
+preview dialog embeds the portfolio site itself on demand. Sites that block embedding via
 security headers get a graceful notice with an always-available open-in-new-tab action.
 
 ## How the data pipeline works
@@ -119,7 +117,6 @@ Defined in `supabase/migrations/` (typed in `src/lib/supabase/types.ts`):
 |---|---|
 | `portfolios` | Directory entries with provenance (section, line, entry hash, first/last seen) |
 | `portfolio_ai_summaries` | Zod-validated AI summaries with model, status, source hash, errors |
-| `portfolio_previews` | Reserved for preview capture status (previews resolve server-side, uncached) |
 | `sync_runs` | One row per synchronization execution with counts and commit SHA |
 | `portfolio_count_snapshots` | Growth-chart series with per-row provenance |
 
@@ -135,14 +132,12 @@ Copy `.env.example` to `.env.local` (never commit it):
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | **yes** | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | **yes** | Publishable/anon key (read-only under RLS) |
-| `SUPABASE_SERVICE_ROLE_KEY` | for AI summaries + seeding | **Server-only**, bypasses RLS — never expose to the browser |
+| `SUPABASE_SECRET_KEY` | for AI summaries + seeding | **Server-only**, bypasses RLS — never expose to the browser |
 | `NEXT_PUBLIC_SITE_URL` | production | Canonical origin used for metadata, sitemap, JSON-LD |
 | `GITHUB_TOKEN` | no | Optional read-only token if raw.githubusercontent rate limits you |
 | `GITHUB_OWNER/REPO/REF/README_PATH` | no | Upstream source overrides |
 | `GROQ_API_KEY` | no | Enables Groq for AI search intents + summaries (server-only) |
 | `GROQ_MODEL` | no | Any Groq JSON-mode model (default `llama-3.3-70b-versatile`) |
-| `PREVIEW_PROVIDER` | no | `none` disables previews; default public provider needs no key |
-| `SCREENSHOT_ONE_ACCESS_KEY` | no | Trusted screenshot provider key (server-only) |
 
 The Vercel ↔ Supabase integration's variable names (`NEXT_PUBLIC_SUPABASE_ANON_KEY`,
 `SUPABASE_URL`) are accepted as fallbacks. Server-only secrets must never be prefixed with
@@ -159,7 +154,6 @@ and the UI falls back to keyword search.
 | `GET /api/growth?range=` | Verified growth series (30d/90d/1y/all) |
 | `GET /api/portfolios/[slug]` | Detail payload + related portfolios |
 | `GET /api/technologies[?slug=]` | Canonical technology list / landing metadata + related techs |
-| `GET /api/preview/[slug]` | 302 to the provider-resolved preview image (server-side) |
 | `POST /api/ai/search` | Natural-language search (rate-limited, validated intent, real query) |
 | `POST /api/ai/summaries` | Generate/refresh one summary (rate-limited, persisted, reused) |
 
@@ -183,7 +177,7 @@ so the information architecture is a hash-routed SPA on `/` (e.g. `/#/portfolios
 1. Supabase: apply `supabase/migrations/*.sql`, then run `bun run db:seed` once (or the
    "Sync database" workflow) — see `supabase/README.md`.
 2. Vercel → Settings → Environment Variables: `NEXT_PUBLIC_SUPABASE_URL`,
-   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL`
+   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SITE_URL`
    (+ optional `GROQ_API_KEY`). Redeploy after changing them.
 3. Build and start use the framework defaults (`next build` / `next start`); no extra config.
 4. Smoke-test: `/api` → `{"status":"ok","portfolios":2072}`, `/api/stats` 200, `/sitemap.xml`
@@ -199,7 +193,7 @@ so the information architecture is a hash-routed SPA on `/` (e.g. `/#/portfolios
 3. If upstream fetch/parsing fails: keep the previous artifact, fail the job visibly
 
 When that PR is merged, `.github/workflows/sync-database.yml` runs `scripts/seed-db.ts` against
-Supabase (repository secrets `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`), recording a
+Supabase (repository secrets `SUPABASE_URL` + `SUPABASE_SECRET_KEY`), recording a
 `sync_runs` row + snapshot so the verified chart history grows automatically.
 
 `ci.yml` runs lint, typecheck, unit tests, and the production build on every push/PR.

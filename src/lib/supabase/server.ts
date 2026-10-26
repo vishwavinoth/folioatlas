@@ -2,9 +2,9 @@
  * FolioAtlas — server-side Supabase clients.
  *
  * - reader: publishable (anon) key, so every read is constrained by RLS.
- * - writer: service-role key, used only for privileged writes (AI summaries).
+ * - writer: secret (service-role) key, used only for privileged writes.
  *
- * Never import this module from client components: the service-role key
+ * Never import this module from client components: the secret key
  * bypasses Row Level Security.
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -31,8 +31,13 @@ function env(...names: string[]): string | undefined {
 // integration provisions automatically.
 const supabaseUrl = () => env("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL");
 const publishableKey = () =>
-  env("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY");
-const serviceRoleKey = () => env("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY");
+  env(
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_ANON_KEY"
+  );
+const secretKey = () => env("SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY");
 
 const options = {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
@@ -56,7 +61,7 @@ export function dbReader(): Db {
 export function dbWriter(): Db | null {
   if (writer) return writer;
   const url = supabaseUrl();
-  const key = serviceRoleKey();
+  const key = secretKey();
   if (!url || !key) return null;
   writer = createClient<Database>(url, key, options);
   return writer;
@@ -65,7 +70,7 @@ export function dbWriter(): Db | null {
 /** Same as dbWriter() but throws when unconfigured (for scripts). */
 export function requireDbWriter(): Db {
   const client = dbWriter();
-  if (!client) throw new DatabaseNotConfiguredError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
+  if (!client) throw new DatabaseNotConfiguredError("SUPABASE_URL and SUPABASE_SECRET_KEY");
   return client;
 }
 

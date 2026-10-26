@@ -213,11 +213,10 @@ export function MethodologyView({ index }: { index: ClientIndex }) {
 
         <Section title="Website previews">
           <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
-            Preview thumbnails are resolved server-side and redirected through FolioAtlas — no screenshot-provider
-            credentials ever reach your browser. If a website refuses embedding or a screenshot cannot be produced,
-            the UI says so explicitly with an open-in-new-tab action instead of showing anything fabricated. Sites
-            that block embedding do so through their own security headers; FolioAtlas never bypasses those
-            restrictions.
+            FolioAtlas uses no screenshot or thumbnail service. The in-page preview embeds the portfolio website
+            itself, only when you open it. If a website refuses embedding, the UI says so explicitly with an
+            open-in-new-tab action. Sites that block embedding do so through their own security headers;
+            FolioAtlas never bypasses those restrictions.
           </p>
         </Section>
 

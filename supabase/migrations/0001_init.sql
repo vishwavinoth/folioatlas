@@ -1,11 +1,9 @@
--- FolioAtlas — Supabase/Postgres schema (PRD §8)
--- Mirrors prisma/schema.prisma 1:1 so the same data model runs on SQLite
--- (local) and Postgres/Supabase (production).
+-- FolioAtlas — Supabase/Postgres schema (PRD §8).
 --
 -- Apply with:  supabase db push   (or psql -f this-file)
 -- Every table enables Row Level Security. The public directory data is
 -- readable by the anon role; ALL writes require the service role (server-side
--- only — never expose SUPABASE_SERVICE_ROLE_KEY to a browser).
+-- only — never expose SUPABASE_SECRET_KEY to a browser).
 
 -- ── portfolios ──────────────────────────────────────────────────────────────
 create table if not exists public.portfolios (
@@ -59,20 +57,6 @@ create table if not exists public.portfolio_ai_summaries (
 
 create index if not exists ai_summaries_status_idx on public.portfolio_ai_summaries (status);
 
--- ── portfolio_previews ──────────────────────────────────────────────────────
-create table if not exists public.portfolio_previews (
-  id             uuid primary key default gen_random_uuid(),
-  portfolio_id   text not null unique references public.portfolios (id) on delete cascade,
-  image_url      text,
-  provider       text,
-  status         text not null default 'pending'
-                 check (status in ('pending', 'ready', 'unavailable')),
-  captured_at    timestamptz,
-  source_url_hash text not null,
-  error_code     text,
-  updated_at     timestamptz not null default now()
-);
-
 -- ── sync_runs ───────────────────────────────────────────────────────────────
 create table if not exists public.sync_runs (
   id                       uuid primary key default gen_random_uuid(),
@@ -116,7 +100,6 @@ create index if not exists snapshots_provenance_idx on public.portfolio_count_sn
 
 alter table public.portfolios              enable row level security;
 alter table public.portfolio_ai_summaries  enable row level security;
-alter table public.portfolio_previews      enable row level security;
 alter table public.sync_runs               enable row level security;
 alter table public.portfolio_count_snapshots enable row level security;
 
@@ -127,10 +110,6 @@ create policy "public read portfolios"
 drop policy if exists "public read ai summaries" on public.portfolio_ai_summaries;
 create policy "public read ai summaries"
   on public.portfolio_ai_summaries for select to anon, authenticated using (true);
-
-drop policy if exists "public read previews" on public.portfolio_previews;
-create policy "public read previews"
-  on public.portfolio_previews for select to anon, authenticated using (true);
 
 drop policy if exists "public read sync runs" on public.sync_runs;
 create policy "public read sync runs"

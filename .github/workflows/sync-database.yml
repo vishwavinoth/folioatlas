@@ -6,7 +6,7 @@ name: Sync database
 #
 # Required repository secrets:
 #   SUPABASE_URL               https://<project-ref>.supabase.co
-#   SUPABASE_SERVICE_ROLE_KEY  service-role (secret) key — server-side only
+#   SUPABASE_SECRET_KEY  service-role (secret) key — server-side only
 
 on:
   push:
@@ -30,10 +30,10 @@ jobs:
       - name: Check Supabase secrets
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
-            echo "::error::Set the SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY repository secrets."
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SECRET_KEY" ]; then
+            echo "::error::Set the SUPABASE_URL and SUPABASE_SECRET_KEY repository secrets."
             exit 1
           fi
 
@@ -49,5 +49,5 @@ jobs:
       - name: Sync Supabase from artifact + verified upstream history
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: bun scripts/seed-db.ts --clone-dir "$RUNNER_TEMP/upstream"

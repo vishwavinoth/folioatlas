@@ -121,17 +121,15 @@ smoothing, no interpolation, no fabrication from a single report.
 
 ## 7. Website previews
 
-✅ Screenshot URLs resolve **server-side** and are redirected through `/api/preview/[slug]`, so
-credentials never reach the browser. Providers: public default (no key) → ScreenshotOne when
-`SCREENSHOT_ONE_ACCESS_KEY` is set → `PREVIEW_PROVIDER=none` disables entirely with an explicit
-"unavailable" state (never a fabricated screenshot). Sites that block embedding get a graceful
-notice with an always-available open-in-new-tab action.
+✅ No third-party screenshot service (decision 2026-10-26). Cards show a self-contained domain
+tile; the in-page preview dialog embeds the site itself on demand. Sites that block embedding get
+a graceful notice with an always-available open-in-new-tab action.
 
 ## 8. Data model
 
 Supabase Postgres is the only database: `supabase/migrations/` (schema + GIN index + RLS +
-API grants). Five tables: `portfolios`, `portfolio_ai_summaries`, `portfolio_previews`,
-`sync_runs`, `portfolio_count_snapshots`. Setup and RLS verification: `supabase/README.md`.
+API grants). Four tables: `portfolios`, `portfolio_ai_summaries`, `sync_runs`,
+`portfolio_count_snapshots`. Setup and RLS verification: `supabase/README.md`.
 
 **Expected contents after `bun run db:seed` (verified against a local Postgres, 2026-10-26):**
 
@@ -141,12 +139,11 @@ API grants). Five tables: `portfolios`, `portfolio_ai_summaries`, `portfolio_pre
 | portfolio_count_snapshots | 3,714 | 3,713 git-history + 1 sync-run per seed; span 2019-09-13 → present |
 | sync_runs | 1 per seed | Failed runs are marked `failed` with an error summary |
 | portfolio_ai_summaries | grows on demand | Generated via `POST /api/ai/summaries` (needs `GROQ_API_KEY`) |
-| portfolio_previews | 0 | Reserved; previews resolve per request without DB writes |
 
 ## 9. Security & privacy
 
-✅ Implemented: URL validation rejects credentials/private hosts/dangerous schemes; SSRF-safe
-server-side preview resolution; AI layer is the security boundary (unknown slugs dropped, output
+✅ Implemented: URL validation rejects credentials/private hosts/dangerous schemes; no
+third-party screenshot calls; AI layer is the security boundary (unknown slugs dropped, output
 shapes clamped by zod); rate limiting on AI endpoints (10/min search, 6/min summaries) and
 previews; parameterized Supabase queries; service-role keys server-only; search queries processed
 server-side (disclosed in the privacy page); `rel="noopener noreferrer"` on external links.

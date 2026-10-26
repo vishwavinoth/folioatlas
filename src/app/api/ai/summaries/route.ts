@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
  * Body: { slug: string }
  */
 export async function POST(req: Request) {
-  if (!dbWriter()) return jsonError("summaries-disabled", 503, "SUPABASE_SERVICE_ROLE_KEY is not configured.");
+  if (!dbWriter()) return jsonError("summaries-disabled", 503, "SUPABASE_SECRET_KEY is not configured.");
 
   const limit = rateLimit(`ai-summary:${clientIp(req)}`, 6, 60_000);
   if (!limit.allowed) {

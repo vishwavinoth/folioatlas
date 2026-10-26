@@ -5,7 +5,7 @@ import { ArrowUpRight, Check, Copy, Eye, Sparkles, User } from "lucide-react";
 import type { WirePortfolio } from "@/lib/api-types";
 import { technologyLabel } from "@/lib/portfolio/classify";
 import { TechnologyChip } from "./technology-chip";
-import { PreviewImage } from "@/components/preview/preview-image";
+import { SiteTile } from "@/components/preview/site-tile";
 import { PreviewDialog } from "@/components/preview/preview-dialog";
 
 function prettyHost(url: string): string {
@@ -42,8 +42,7 @@ export function PortfolioCard({ portfolio }: { portfolio: WirePortfolio }) {
 
   return (
     <article className="surface-card motion-lift group relative flex h-full flex-col rounded-2xl p-4">
-      {/* Preview */}
-      <PreviewImage slug={portfolio.slug} url={portfolio.portfolioUrl} label={portfolio.name} className="mb-3" />
+      <SiteTile url={portfolio.portfolioUrl} label={portfolio.name} className="mb-3" />
 
       {/* Identity */}
       <div className="flex items-start gap-2.5">

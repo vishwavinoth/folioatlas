@@ -17,7 +17,7 @@
  * (portfolios.generated.json), produced by scripts/sync-portfolios.ts.
  * Entries no longer in the artifact are removed (their summaries cascade).
  *
- * Requires SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY.
+ * Requires SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) and SUPABASE_SECRET_KEY.
  * Idempotent: safe to re-run after every artifact change.
  *
  * Usage:  bun scripts/seed-db.ts [--clone-dir /tmp/fa-upstream]

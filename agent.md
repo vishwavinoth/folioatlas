@@ -25,7 +25,7 @@ with AI search, AI summaries, verified growth analytics, previews, and a command
 ```
 src/app/                  Next.js App Router: layout, page (SPA mount), API routes, sitemap, robots
 src/app/api/              search, stats, growth, portfolios/[slug], technologies,
-                          preview/[slug], ai/search, ai/summaries
+                          ai/search, ai/summaries
 src/components/           views/ (home, directory, technologies, content), directory/, search/,
                           portfolio/, preview/, command/ (palette), navigation/, analytics/, ui/
 src/lib/portfolio/        pure data pipeline: parse, url, classify, identity, directory, github
@@ -34,7 +34,7 @@ src/lib/store/queries.ts  Supabase loader + 5-min per-instance cache feeding cat
 src/lib/supabase/         server.ts (reader/writer clients, paging), types.ts (table types)
 src/lib/ai/               provider.ts (Groq + extractJson), search-intent.ts (zod),
                           summaries.ts (grounded generation + persistence)
-src/lib/server/           request (validation, serverError, cache headers), rate-limit, preview
+src/lib/server/           request (validation, serverError, cache headers), rate-limit
 src/lib/router/           hash-router (SPA navigation, URL state)
 src/data/                 GENERATED artifacts — never hand-edit:
                           portfolios.generated.json (2,072 entries), sync-report.generated.json
@@ -113,11 +113,10 @@ build is green.
 `.env.example` is the canonical annotated list.
 
 - Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; plus
-  `SUPABASE_SERVICE_ROLE_KEY` for AI summaries and seeding. Missing config → `503
+  `SUPABASE_SECRET_KEY` for AI summaries and seeding. Missing config → `503
   database-not-configured` (see `serverError`).
 - AI features require `GROQ_API_KEY`; without it AI endpoints return 503 and the UI falls back.
-- Previews use the public no-credential provider; `SCREENSHOT_ONE_ACCESS_KEY` upgrades it;
-  `PREVIEW_PROVIDER=none` disables it.
+- No screenshot/thumbnail services: cards use `SiteTile`; the preview dialog iframes the site.
 
 ## 7. Working norms
 

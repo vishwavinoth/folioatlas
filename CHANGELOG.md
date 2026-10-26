@@ -29,9 +29,11 @@ All notable changes to FolioAtlas are documented here. Format follows
 - Site filter `github` no longer silently overrides a collection filter.
 - Out-of-range pages return the last page's items instead of an empty list.
 - AI search ranks every match instead of an arbitrary 400-row subset.
-- Preview requests no longer write to the database on every image load.
 
 ### Removed
+- All third-party screenshot services (WordPress mShots, ScreenshotOne), `/api/preview`,
+  `PREVIEW_PROVIDER` / `SCREENSHOT_ONE_ACCESS_KEY` and the unused `portfolio_previews` table.
+  Cards show a self-contained domain tile; the preview dialog embeds the site itself.
 - 18 unused dependencies, sandbox export tooling (`make-export.sh`, `dump-db.ts`,
   `db-inspect.ts`, `README-EXPORT.md`) and the sandbox `worklog.md`.
 

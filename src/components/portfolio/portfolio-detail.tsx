@@ -22,7 +22,7 @@ import { useApi } from "@/hooks/use-api";
 import { technologyLabel } from "@/lib/portfolio/classify";
 import { TechnologyChip } from "@/components/directory/technology-chip";
 import { PortfolioCard } from "@/components/directory/portfolio-card";
-import { PreviewImage } from "@/components/preview/preview-image";
+import { SiteTile } from "@/components/preview/site-tile";
 import { PreviewDialog } from "@/components/preview/preview-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -242,12 +242,7 @@ export function PortfolioDetail({ slug }: { slug: string }) {
               className="mt-2 block w-full text-left"
               aria-label={`Open larger preview of ${portfolio.name}'s website`}
             >
-              <PreviewImage
-                slug={portfolio.slug}
-                url={portfolio.portfolioUrl}
-                label={portfolio.name}
-                className="transition-shadow hover:shadow-md"
-              />
+              <SiteTile url={portfolio.portfolioUrl} label={portfolio.name} className="transition-shadow hover:shadow-md" />
             </button>
             <div className="mt-2 flex items-center justify-between gap-3">
               <span className="truncate text-xs text-[var(--fa-text-secondary)]">{portfolio.portfolioUrl}</span>
