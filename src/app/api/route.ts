@@ -9,8 +9,9 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   try {
-    const { count, error } = await dbReader().from("portfolios").select("id", { count: "exact", head: true });
-    if (error) throw new Error(error.message);
+    // A GET (not HEAD) so a missing table surfaces as an error instead of a silent empty count.
+    const { count, error, status } = await dbReader().from("portfolios").select("id", { count: "exact" }).limit(1);
+    if (error || status >= 400) throw new Error(error?.message || `supabase responded ${status}`);
     return Response.json({ status: "ok", portfolios: count ?? 0 }, { headers: { "cache-control": "no-store" } });
   } catch (err) {
     return serverError("api/health", err, "unhealthy");
