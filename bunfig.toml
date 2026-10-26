@@ -1,0 +1,5 @@
+# Bun runtime configuration — FolioAtlas
+# Scope test discovery to tests/ so generated export staging copies
+# (export-staging/) and sandbox scaffolding never pollute `bun test`.
+[test]
+root = "./tests"

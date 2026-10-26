@@ -25,6 +25,7 @@ import { deriveGithubUsername, githubAvatarUrl, githubProfileUrl } from "../src/
 import type { PortfolioIndex } from "../src/lib/portfolio/types";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { PrismaClient } from "@prisma/client";
 
 const ROOT = join(import.meta.dir, "..");
@@ -34,7 +35,7 @@ const README_PATH = process.env.GITHUB_README_PATH || "README.md";
 const REPOSITORY = `${process.env.GITHUB_OWNER || "emmabostian"}/${process.env.GITHUB_REPO || "developer-portfolios"}`;
 
 const cloneArgIdx = process.argv.indexOf("--clone-dir");
-const CLONE_DIR = cloneArgIdx !== -1 ? process.argv[cloneArgIdx + 1] : "/tmp/fa-upstream";
+const CLONE_DIR = cloneArgIdx !== -1 ? process.argv[cloneArgIdx + 1] : join(tmpdir(), "fa-upstream");
 
 const db = new PrismaClient({ log: ["error"] });
 
