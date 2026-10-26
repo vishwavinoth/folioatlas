@@ -5,6 +5,7 @@ import { Compass, Github, Menu, Search, X } from "lucide-react";
 import { buildHref, useRoute, type Route } from "@/lib/router/router";
 import { paletteControls } from "@/components/command/palette-host";
 import { ThemeToggle } from "./theme-toggle";
+import { RELEASE_STAGE } from "@/lib/site/creator";
 
 const NAV_ITEMS = [
   { href: "/", label: "Discover", match: (r: Route) => r.path === "/" },
@@ -62,6 +63,14 @@ export function GlassNavigation() {
           </span>
           <span className="text-[15px]">FolioAtlas</span>
         </a>
+        {RELEASE_STAGE && (
+          <span
+            className="mr-1 rounded-full border border-[var(--fa-accent)]/30 bg-[var(--fa-accent)]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--fa-accent)]"
+            title="FolioAtlas is in beta — features may change and feedback is welcome"
+          >
+            {RELEASE_STAGE}
+          </span>
+        )}
 
         {/* Desktop links */}
         <ul className="hidden items-center gap-0.5 md:flex">

@@ -2,7 +2,7 @@
 
 import { Compass, ExternalLink, Github } from "lucide-react";
 import type { ClientIndex } from "@/lib/portfolio/types";
-import { CREATOR } from "@/lib/site/creator";
+import { CREATOR, RELEASE_STAGE } from "@/lib/site/creator";
 
 export function SiteFooter({ index }: { index: ClientIndex }) {
   const synced = new Date(index.generatedAt);
@@ -23,6 +23,14 @@ export function SiteFooter({ index }: { index: ClientIndex }) {
               One beautiful place to discover real developer portfolios. All entries are sourced from an
               open-source community repository — nothing here is invented.
             </p>
+            {RELEASE_STAGE && (
+              <p className="mt-3 text-[13px] leading-relaxed text-[var(--fa-text-secondary)]">
+                <span className="mr-1.5 rounded-full bg-[var(--fa-accent)]/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--fa-accent)]">
+                  {RELEASE_STAGE}
+                </span>
+                FolioAtlas is in beta — things may change, and feedback is very welcome.
+              </p>
+            )}
             <p className="mt-3 text-[13px] text-[var(--fa-text-secondary)]">
               Built by{" "}
               <a

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ArrowUpRight, Check, Copy, Sparkles, User } from "lucide-react";
 import type { WirePortfolio } from "@/lib/api-types";
 import { technologyLabel } from "@/lib/portfolio/classify";
+import { copyWithToast } from "@/lib/notify";
 import { TechnologyChip } from "./technology-chip";
 
 function prettyHost(url: string): string {
@@ -27,12 +28,9 @@ export function PortfolioCard({ portfolio }: { portfolio: WirePortfolio }) {
 
   const copyLink = async () => {
     const link = `${window.location.origin}/portfolio/${portfolio.slug}`;
-    try {
-      await navigator.clipboard.writeText(link);
+    if (await copyWithToast(link, `Profile link for ${portfolio.name} copied`)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
-    } catch {
-      // Clipboard unavailable — the detail page still offers the URL.
     }
   };
 

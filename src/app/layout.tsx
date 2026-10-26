@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/materials/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 import { SITE_URL } from "@/lib/site/index-data";
 
@@ -62,7 +63,10 @@ export default function RootLayout({
           Skip to main content
         </a>
         <div className="ambient-backdrop" aria-hidden="true" />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <Toaster position="bottom-center" richColors closeButton />
+        </ThemeProvider>
       </body>
     </html>
   );

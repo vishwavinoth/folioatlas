@@ -23,6 +23,7 @@ import { technologyLabel } from "@/lib/portfolio/classify";
 import { TechnologyChip } from "@/components/directory/technology-chip";
 import { PortfolioCard } from "@/components/directory/portfolio-card";
 import { useFeatures } from "@/lib/features/context";
+import { copyWithToast, toast } from "@/lib/notify";
 import { PreviewDialog } from "@/components/preview/preview-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -73,19 +74,28 @@ export function PortfolioDetail({ slug }: { slug: string }) {
       if (res.ok) {
         const json = (await res.json()) as { summary: AiSummaryWire | null };
         if (json.summary) setSummaryOverride(json.summary);
+        toast.success("AI summary generated");
+      } else {
+        const body = (await res.json().catch(() => ({}))) as { error?: string; retryAfterSeconds?: number };
+        const description =
+          body.error === "rate-limited"
+            ? `Too many requests — try again in ${body.retryAfterSeconds ?? 60} seconds.`
+            : body.error === "insufficient-source-data"
+              ? "This entry has no role text or focus areas to summarize from."
+              : "The AI service is unavailable right now. Please try again later.";
+        toast.error("Couldn't generate a summary", { description });
       }
+    } catch {
+      toast.error("Couldn't generate a summary", { description: "Check your connection and try again." });
     } finally {
       setGenerating(false);
     }
   };
 
   const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(profileUrl(slug));
+    if (await copyWithToast(profileUrl(slug), "Profile link copied")) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
-    } catch {
-      /* clipboard unavailable */
     }
   };
 
@@ -95,8 +105,9 @@ export function PortfolioDetail({ slug }: { slug: string }) {
       try {
         await navigator.share({ title: `${portfolio.name} — FolioAtlas`, url });
         return;
-      } catch {
-        /* user cancelled → fall through to clipboard */
+      } catch (err) {
+        // The user dismissed the share sheet: do nothing. Other failures fall back to copying.
+        if (err instanceof Error && err.name === "AbortError") return;
       }
     }
     copyLink();

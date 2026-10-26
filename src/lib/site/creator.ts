@@ -8,3 +8,6 @@ export const CREATOR = {
   /** Call-to-action label for reaching the creator. */
   contactLabel: "Say hi on GitHub",
 } as const;
+
+/** Release stage shown as a badge in the navigation and a note in the footer. Set to null at launch. */
+export const RELEASE_STAGE: string | null = "Beta";

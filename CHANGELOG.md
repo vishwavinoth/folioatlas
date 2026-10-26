@@ -4,6 +4,19 @@ All notable changes to FolioAtlas are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning is pragmatic
 (0.x until the 1.0 public launch).
 
+## [0.5.1] — 2026-10-26 (feedback + beta)
+
+### Added
+- Toast notifications (sonner) for user actions: profile link copied, copy failed (with a
+  fallback hint), AI summary generated / failed (rate limit, missing data, service down) and AI
+  search falling back to keyword results.
+- "Beta" badge next to the logo and a beta note in the footer (`RELEASE_STAGE` in
+  `src/lib/site/creator.ts`; set to `null` at launch).
+- Creator credit with "Say hi on GitHub" and "Add your portfolio" calls to action.
+
+### Fixed
+- Dismissing the native share sheet no longer falls through to copying the link.
+
 ## [0.5.0] — 2026-10-26 (clean URLs, SEO, UI polish)
 
 ### Changed

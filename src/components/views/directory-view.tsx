@@ -19,6 +19,7 @@ import { useApi } from "@/hooks/use-api";
 import { paletteControls } from "@/components/command/palette-host";
 import { buildHref, navigateTo, type Route } from "@/lib/router/router";
 import { useFeatures } from "@/lib/features/context";
+import { toast } from "@/lib/notify";
 import { collectionBySlug } from "@/lib/portfolio/collections";
 import { technologyLabel } from "@/lib/portfolio/classify";
 import { GlassSearchField } from "@/components/search/glass-search-field";
@@ -150,6 +151,9 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         setAiError(body.error ?? "ai-unavailable");
         setMode("keyword");
+        toast.warning("AI search is unavailable", {
+          description: body.error === "rate-limited" ? "Rate limit reached — showing keyword results." : "Showing keyword results instead.",
+        });
         return;
       }
       if (!res.ok) throw new Error(`http-${res.status}`);
@@ -158,6 +162,7 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
     } catch {
       setAiError("ai-search-failed");
       setMode("keyword");
+      toast.warning("AI search failed", { description: "Showing keyword results instead." });
     } finally {
       setAiLoading(false);
     }
