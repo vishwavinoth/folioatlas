@@ -24,6 +24,9 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      - name: Typecheck
+        run: bun run typecheck
+
       - name: Unit tests (parser, URL validation, classification, directory logic)
         run: bun test tests/unit
 

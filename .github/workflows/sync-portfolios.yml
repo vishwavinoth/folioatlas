@@ -64,7 +64,7 @@ jobs:
 
             - Pipeline report is in `src/data/sync-report.generated.json`
             - Unit tests passed before this PR was opened
-            - Merging this PR publishes the refreshed directory on the next deploy
+            - Merging this PR updates Supabase via the "Sync database" workflow
           branch: sync/portfolio-index
           delete-branch: true
           labels: data-sync

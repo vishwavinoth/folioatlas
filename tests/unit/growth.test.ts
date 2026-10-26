@@ -5,27 +5,20 @@
  */
 import { describe, test, expect } from "bun:test";
 import { extractJson } from "../../src/lib/ai/provider";
+import { growthSeries, type GrowthRange } from "../../src/lib/store/catalog";
 
-// The growth series bucketing lives in the server store; test the pure parts
-// by importing the module directly (framework-free logic over plain rows).
-// getGrowthSeries is async + db-bound, so we replicate + assert its bucketing
-// contract here via a local pure implementation mirrored from queries.ts.
-type Snap = { recordedAt: Date; totalPortfolios: number; portfoliosAdded: number; provenance: string };
+type Snap = { recordedAt: Date; totalPortfolios: number; portfoliosAdded: number; provenance: "git-history" | "sync-run" };
 
-function bucketize(snaps: Snap[], range: "30d" | "90d" | "1y" | "all") {
-  const bucketMs = range === "30d" || range === "90d" ? 86400000 : range === "1y" ? 7 * 86400000 : 30 * 86400000;
-  const points: Array<{ date: string; total: number; added: number; provenance: string }> = [];
-  for (const s of snaps) {
-    const t = s.recordedAt.getTime();
-    const last = points[points.length - 1];
-    if (last && t - new Date(last.date).getTime() < bucketMs) {
-      last.total = s.totalPortfolios;
-      last.added += s.portfoliosAdded;
-    } else {
-      points.push({ date: s.recordedAt.toISOString(), total: s.totalPortfolios, added: s.portfoliosAdded, provenance: s.provenance });
-    }
-  }
-  return points;
+const NOW = Date.parse("2026-10-26T12:00:00Z");
+
+function bucketize(snaps: Snap[], range: GrowthRange) {
+  const rows = snaps.map((s) => ({
+    recorded_at: s.recordedAt.toISOString(),
+    total_portfolios: s.totalPortfolios,
+    portfolios_added: s.portfoliosAdded,
+    provenance: s.provenance,
+  }));
+  return growthSeries(rows, range, NOW).points;
 }
 
 const D = (iso: string) => new Date(iso);
@@ -77,6 +70,29 @@ describe("growth series bucketing", () => {
       "all"
     );
     expect(points[0].provenance).toBe("git-history");
+  });
+});
+
+describe("growth series range + coverage", () => {
+  test("range window excludes older snapshots and reports coverage", () => {
+    const series = growthSeries(
+      [
+        { recorded_at: "2025-01-01T00:00:00Z", total_portfolios: 1, portfolios_added: 1, provenance: "git-history" },
+        { recorded_at: "2026-10-20T00:00:00Z", total_portfolios: 5, portfolios_added: 4, provenance: "git-history" },
+      ],
+      "30d",
+      NOW
+    );
+    expect(series.totalSnapshotsInRange).toBe(1);
+    expect(series.coverageFrom).toBe("2026-10-20T00:00:00.000Z");
+    expect(series.coverageTo).toBe("2026-10-20T00:00:00.000Z");
+    expect(series.downsampled).toBe(false);
+  });
+
+  test("empty history yields an honest empty series", () => {
+    const series = growthSeries([], "all", NOW);
+    expect(series.points).toEqual([]);
+    expect(series.coverageFrom).toBeNull();
   });
 });
 

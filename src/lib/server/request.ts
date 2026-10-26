@@ -2,7 +2,7 @@
  * FolioAtlas — request parsing + validation for API routes.
  * Query parameters are untrusted: every value is validated and clamped.
  */
-import type { SearchParamsInput } from "@/lib/store/queries";
+import type { SearchParamsInput } from "@/lib/store/catalog";
 import { technologyLabel } from "@/lib/portfolio/classify";
 import { collectionBySlug } from "@/lib/portfolio/collections";
 
@@ -68,6 +68,23 @@ export function parseGrowthRange(searchParams: URLSearchParams): GrowthRange {
 export function jsonError(code: string, status: number, detail?: string): Response {
   return Response.json({ error: code, ...(detail ? { detail } : {}) }, { status });
 }
+
+/**
+ * Log an unexpected route failure and map it to a stable error response.
+ * Missing Supabase configuration is reported as 503 so it is obvious in
+ * monitoring and never mistaken for a code bug.
+ */
+export function serverError(route: string, err: unknown, code: string): Response {
+  if (err instanceof Error && err.name === "DatabaseNotConfiguredError") {
+    console.error(`[${route}] ${err.message}`);
+    return jsonError("database-not-configured", 503);
+  }
+  console.error(`[${route}] failed:`, err);
+  return jsonError(code, 500);
+}
+
+/** Cache-Control for public, sync-driven data: CDN-cached, revalidated in background. */
+export const PUBLIC_CACHE = "public, max-age=60, s-maxage=300, stale-while-revalidate=600";
 
 export function techLabelSafe(slug: string): string {
   return technologyLabel(slug);

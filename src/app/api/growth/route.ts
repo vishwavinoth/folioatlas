@@ -1,5 +1,5 @@
 import { getGrowthSeries } from "@/lib/store/queries";
-import { parseGrowthRange, jsonError } from "@/lib/server/request";
+import { parseGrowthRange, serverError, PUBLIC_CACHE } from "@/lib/server/request";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +16,8 @@ export async function GET(req: Request) {
   const range = parseGrowthRange(url.searchParams);
   try {
     const series = await getGrowthSeries(range);
-    return Response.json(series, { headers: { "cache-control": "public, max-age=300" } });
+    return Response.json(series, { headers: { "cache-control": PUBLIC_CACHE } });
   } catch (err) {
-    console.error("[api/growth] failed:", err);
-    return jsonError("growth-failed", 500);
+    return serverError("api/growth", err, "growth-failed");
   }
 }

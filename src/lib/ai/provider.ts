@@ -1,19 +1,17 @@
 /**
  * FolioAtlas — server-only LLM provider abstraction.
  *
- * Priority:
- *  1. Groq (OpenAI-compatible REST) when GROQ_API_KEY is configured.
- *     Model is configurable via GROQ_MODEL (default: llama-3.3-70b-versatile,
- *     which supports JSON mode on Groq).
- *  2. z-ai-web-dev-sdk (works in this environment) as a graceful fallback so
- *     AI features degrade to standard search only when NO provider exists.
+ * Groq (OpenAI-compatible REST) when GROQ_API_KEY is configured. The model
+ * is configurable via GROQ_MODEL (default: llama-3.3-70b-versatile, which
+ * supports JSON mode on Groq). Without a key every call throws
+ * LlmUnavailableError and AI features degrade to keyword search.
  *
  * Security: keys live exclusively in server env vars; nothing here is ever
  * imported from client code. All JSON responses are validated by callers
  * with zod schemas before use.
  */
 
-export type LlmProvider = "groq" | "z-ai";
+export type LlmProvider = "groq";
 
 export type LlmResult = {
   raw: string;
@@ -91,26 +89,6 @@ async function groqComplete(system: string, user: string, maxTokens: number): Pr
   }
 }
 
-async function zaiComplete(system: string, user: string): Promise<LlmResult> {
-  try {
-    const { default: ZAI } = await import("z-ai-web-dev-sdk");
-    const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
-      messages: [
-        { role: "assistant", content: system },
-        { role: "user", content: user },
-      ],
-      thinking: { type: "disabled" },
-    });
-    const content = completion.choices[0]?.message?.content ?? "";
-    if (!content.trim()) throw new LlmRequestError("zai-empty-response", "z-ai");
-    return { raw: content, model: "z-ai-chat", provider: "z-ai" };
-  } catch (err) {
-    if (err instanceof LlmRequestError) throw err;
-    throw new LlmRequestError(`zai-failed: ${(err as Error).message}`, "z-ai");
-  }
-}
-
 /**
  * Request a JSON-only completion. Returns the raw string; callers MUST
  * validate with a zod schema before trusting the payload.
@@ -121,10 +99,8 @@ export async function completeJson(args: {
   maxTokens?: number;
 }): Promise<LlmResult> {
   const maxTokens = args.maxTokens ?? 800;
-  if (groqConfigured()) return groqComplete(args.system, args.user, maxTokens);
-  // In this environment the z-ai SDK is the working provider; when neither
-  // provider exists the caller falls back to standard keyword search.
-  return zaiComplete(args.system, args.user);
+  if (!groqConfigured()) throw new LlmUnavailableError();
+  return groqComplete(args.system, args.user, maxTokens);
 }
 
 /** Extract the first JSON object from a model response (tolerates prose fences). */

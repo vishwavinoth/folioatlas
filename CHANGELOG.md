@@ -4,6 +4,37 @@ All notable changes to FolioAtlas are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning is pragmatic
 (0.x while the product ships from the sandbox environment).
 
+## [0.4.0] — 2026-10-26 (Supabase-only, production deployment)
+
+### Changed
+- **Supabase is the only database.** Prisma, SQLite (`prisma/`, `db/custom.db`) and all
+  SQLite tooling were removed. The server uses `@supabase/supabase-js`: reads with the
+  publishable key under RLS, AI-summary writes with the service-role key.
+- Query logic moved into a pure, unit-tested module (`src/lib/store/catalog.ts`); the store
+  loads the catalog from Supabase once per instance with a 5-minute cache.
+- `scripts/seed-db.ts` now syncs Supabase (idempotent upserts, removes entries deleted
+  upstream, marks failed runs `failed`).
+- Standard Vercel build (`next build` / `next start`); dropped standalone output.
+- Public API responses are CDN-cacheable (`s-maxage=300, stale-while-revalidate=600`).
+- AI provider is Groq only; the sandbox-only `z-ai-web-dev-sdk` fallback was removed.
+
+### Added
+- `supabase/migrations/0002_api_grants.sql` — explicit Data API grants.
+- `.github/workflows/sync-database.yml` — syncs Supabase when a data PR is merged.
+- `GET /api` health check; missing Supabase config returns `503 database-not-configured`.
+- `tests/unit/catalog.test.ts` (search/filter/sort/related/featured/intent semantics);
+  growth tests now exercise the real implementation (89 tests total).
+
+### Fixed
+- Site filter `github` no longer silently overrides a collection filter.
+- Out-of-range pages return the last page's items instead of an empty list.
+- AI search ranks every match instead of an arbitrary 400-row subset.
+- Preview requests no longer write to the database on every image load.
+
+### Removed
+- 18 unused dependencies, sandbox export tooling (`make-export.sh`, `dump-db.ts`,
+  `db-inspect.ts`, `README-EXPORT.md`) and the sandbox `worklog.md`.
+
 ## [0.3.0] — 2026-10-27 (QA hardening + full project export)
 
 ### Added

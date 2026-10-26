@@ -6,12 +6,14 @@
  *    canonical technologies). The model is instructed never to invent
  *    experience, employment, qualifications or project ownership.
  *  - Output is zod-validated before persistence.
+ *  - Persistence uses the service-role client (RLS blocks public writes).
  *  - Summaries are stored in the database and reused (never regenerated per
  *    page view). Regeneration happens when the source entry hash changes or
  *    an authorized refresh is requested; retry/error state is tracked.
  */
 import { z } from "zod";
-import { db } from "@/lib/db";
+import { requireDbWriter } from "@/lib/supabase/server";
+import type { AiSummaryRow } from "@/lib/supabase/types";
 import { completeJson, extractJson } from "@/lib/ai/provider";
 import { technologyLabel } from "@/lib/portfolio/classify";
 
@@ -21,13 +23,6 @@ export const SummarySchema = z.object({
   specialties: z.array(z.string().min(2).max(60)).max(5).default([]),
 });
 export type SummaryPayload = z.infer<typeof SummarySchema>;
-
-export class SummariesDisabledError extends Error {
-  constructor() {
-    super("no-llm-provider");
-    this.name = "SummariesDisabledError";
-  }
-}
 
 export function buildSummaryPrompt(input: {
   name: string;
@@ -57,33 +52,42 @@ export function buildSummaryPrompt(input: {
   return { system, user };
 }
 
-/** Generate + persist a summary for one portfolio. Throws SummariesDisabledError when no LLM exists. */
-export async function generateSummaryFor(
-  portfolio: {
-    id: string;
-    name: string;
-    role: string | null;
-    portfolioUrl: string;
-    technologies: string[];
-    sourceEntryHash: string;
-  },
-  opts: { force?: boolean } = {}
-): Promise<{ status: "complete" | "failed"; errorCode?: string }> {
-  if (!portfolio.role && portfolio.technologies.length === 0) {
-    // Grounding rule: nothing reliable to summarize from.
-    await db.portfolioAiSummary.upsert({
-      where: { portfolioId: portfolio.id },
-      create: {
-        portfolioId: portfolio.id,
-        summary: "",
-        sourceHash: portfolio.sourceEntryHash,
-        status: "failed",
-        errorCode: "insufficient-source-data",
-      },
-      update: { status: "failed", errorCode: "insufficient-source-data" },
+type SummaryFields = Omit<AiSummaryRow, "id" | "portfolio_id" | "created_at">;
+
+async function persistSummary(portfolioId: string, fields: Partial<SummaryFields>): Promise<void> {
+  const { error } = await requireDbWriter()
+    .from("portfolio_ai_summaries")
+    .upsert(
+      { portfolio_id: portfolioId, source_hash: "", ...fields, updated_at: new Date().toISOString() },
+      { onConflict: "portfolio_id" }
+    );
+  if (error) throw new Error(`summary persist failed: ${error.message}`);
+}
+
+/**
+ * Generate + persist a summary for one portfolio. Failures are recorded with
+ * a machine-readable error code; "no-llm-provider" means GROQ_API_KEY is unset.
+ */
+export async function generateSummaryFor(portfolio: {
+  id: string;
+  name: string;
+  role: string | null;
+  portfolioUrl: string;
+  technologies: string[];
+  sourceEntryHash: string;
+}): Promise<{ status: "complete" | "failed"; errorCode?: string }> {
+  const fail = async (errorCode: string) => {
+    await persistSummary(portfolio.id, {
+      summary: "",
+      source_hash: portfolio.sourceEntryHash,
+      status: "failed",
+      error_code: errorCode,
     });
-    return { status: "failed", errorCode: "insufficient-source-data" };
-  }
+    return { status: "failed" as const, errorCode };
+  };
+
+  // Grounding rule: nothing reliable to summarize from.
+  if (!portfolio.role && portfolio.technologies.length === 0) return fail("insufficient-source-data");
 
   const { system, user } = buildSummaryPrompt({
     name: portfolio.name,
@@ -92,61 +96,35 @@ export async function generateSummaryFor(
     portfolioHost: safeHost(portfolio.portfolioUrl),
   });
 
+  let result: Awaited<ReturnType<typeof completeJson>>;
+  let payload: SummaryPayload;
   try {
-    const result = await completeJson({ system, user, maxTokens: 400 });
-    const payload = SummarySchema.parse(extractJson(result.raw));
-
-    // Normalize key technologies against the entry's actual canonical techs.
-    const known = new Set(portfolio.technologies);
-    const keyTechs = payload.key_technologies
-      .map((t) => t.toLowerCase().trim())
-      .filter((t) => known.has(t))
-      .slice(0, 6);
-
-    await db.portfolioAiSummary.upsert({
-      where: { portfolioId: portfolio.id },
-      create: {
-        portfolioId: portfolio.id,
-        summary: payload.summary,
-        keyTechnologies: JSON.stringify(keyTechs),
-        specialties: JSON.stringify(payload.specialties.slice(0, 5)),
-        sourceHash: portfolio.sourceEntryHash,
-        model: result.model,
-        status: "complete",
-        generatedAt: new Date(),
-      },
-      update: {
-        summary: payload.summary,
-        keyTechnologies: JSON.stringify(keyTechs),
-        specialties: JSON.stringify(payload.specialties.slice(0, 5)),
-        sourceHash: portfolio.sourceEntryHash,
-        model: result.model,
-        status: "complete",
-        generatedAt: new Date(),
-        errorCode: null,
-      },
-    });
-    return { status: "complete" };
+    result = await completeJson({ system, user, maxTokens: 400 });
+    payload = SummarySchema.parse(extractJson(result.raw));
   } catch (err) {
-    const code =
-      err instanceof Error && err.name === "SummariesDisabledError"
-        ? "no-llm-provider"
-        : err instanceof Error && err.name === "LlmRequestError"
-          ? "llm-request-failed"
-          : "invalid-model-output";
-    await db.portfolioAiSummary.upsert({
-      where: { portfolioId: portfolio.id },
-      create: {
-        portfolioId: portfolio.id,
-        summary: "",
-        sourceHash: portfolio.sourceEntryHash,
-        status: "failed",
-        errorCode: code,
-      },
-      update: { status: "failed", errorCode: code },
-    });
-    return { status: "failed", errorCode: code };
+    const name = err instanceof Error ? err.name : "";
+    if (name === "LlmUnavailableError") return { status: "failed", errorCode: "no-llm-provider" };
+    return fail(name === "LlmRequestError" ? "llm-request-failed" : "invalid-model-output");
   }
+
+  // Normalize key technologies against the entry's actual canonical techs.
+  const known = new Set(portfolio.technologies);
+  const keyTechs = payload.key_technologies
+    .map((t) => t.toLowerCase().trim())
+    .filter((t) => known.has(t))
+    .slice(0, 6);
+
+  await persistSummary(portfolio.id, {
+    summary: payload.summary,
+    key_technologies: keyTechs,
+    specialties: payload.specialties.slice(0, 5),
+    source_hash: portfolio.sourceEntryHash,
+    model: result.model,
+    status: "complete",
+    generated_at: new Date().toISOString(),
+    error_code: null,
+  });
+  return { status: "complete" };
 }
 
 function safeHost(url: string): string {

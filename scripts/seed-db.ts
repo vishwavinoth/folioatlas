@@ -1,5 +1,5 @@
 /**
- * FolioAtlas — provenance-grade database seed (PRD §8, §2 data-integrity rule).
+ * FolioAtlas — provenance-grade Supabase sync (PRD §8, §2 data-integrity rule).
  *
  * Mines the VERIFIED git history of the upstream repository:
  *   - every README.md commit → real entry counts → PortfolioCountSnapshot rows
@@ -15,6 +15,10 @@
  *
  * Final directory state comes from the authoritative generated artifact
  * (portfolios.generated.json), produced by scripts/sync-portfolios.ts.
+ * Entries no longer in the artifact are removed (their summaries cascade).
+ *
+ * Requires SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY.
+ * Idempotent: safe to re-run after every artifact change.
  *
  * Usage:  bun scripts/seed-db.ts [--clone-dir /tmp/fa-upstream]
  */
@@ -26,7 +30,8 @@ import type { PortfolioIndex } from "../src/lib/portfolio/types";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { PrismaClient } from "@prisma/client";
+import { requireDbWriter, fetchAllRows } from "../src/lib/supabase/server";
+import type { Database } from "../src/lib/supabase/types";
 
 const ROOT = join(import.meta.dir, "..");
 const ARTIFACT = join(ROOT, "src", "data", "portfolios.generated.json");
@@ -37,7 +42,17 @@ const REPOSITORY = `${process.env.GITHUB_OWNER || "emmabostian"}/${process.env.G
 const cloneArgIdx = process.argv.indexOf("--clone-dir");
 const CLONE_DIR = cloneArgIdx !== -1 ? process.argv[cloneArgIdx + 1] : join(tmpdir(), "fa-upstream");
 
-const db = new PrismaClient({ log: ["error"] });
+const db = requireDbWriter();
+const CHUNK = 500;
+
+type PortfolioInsert = Database["public"]["Tables"]["portfolios"]["Insert"];
+type SnapshotInsert = Database["public"]["Tables"]["portfolio_count_snapshots"]["Insert"];
+
+/** Throw on a Supabase error so a partial sync never reports success. */
+function check<T>(result: { data: T; error: { message: string } | null }, what: string): T {
+  if (result.error) throw new Error(`${what}: ${result.error.message}`);
+  return result.data;
+}
 
 function git(args: string[], cwd: string): string {
   const proc = Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
@@ -180,7 +195,6 @@ async function main() {
   console.log(`[seed] history walk done in ${elapsed}s — ${snapshots.length} snapshots, ${firstSeen.size} distinct entries`);
 
   // ── Cross-check artifact against history ────────────────────────────────
-  const lastCommit = commits[commits.length - 1];
   const unmatched: string[] = [];
   for (const p of artifact.portfolios) {
     if (!firstSeen.has(p.id)) unmatched.push(p.id);
@@ -190,104 +204,135 @@ async function main() {
   }
 
   // ── Persist ─────────────────────────────────────────────────────────────
-  const run = await db.syncRun.create({
-    data: {
-      startedAt: new Date(),
-      status: "running",
-      trigger: "seed",
-      sourceCommitSha: artifact.source.commit,
-    },
-  });
+  const run = check(
+    await db
+      .from("sync_runs")
+      .insert({
+        started_at: new Date().toISOString(),
+        status: "running",
+        trigger: process.env.GITHUB_ACTIONS ? "github-action" : "seed",
+        source_commit_sha: artifact.source.commit,
+      })
+      .select("id")
+      .single(),
+    "create sync run"
+  )!;
 
-  let inserted = 0;
-  let updated = 0;
-  for (const p of artifact.portfolios) {
-    const history = firstSeen.get(p.id);
-    const firstAt = history?.at ?? new Date(artifact.generatedAt);
-    const lastAt = lastPresent.get(p.id)?.at ?? new Date(artifact.generatedAt);
-    const contentChangedAt = lastChanged.get(p.id);
-    const sourceUpdatedAt = contentChangedAt && contentChangedAt.at.getTime() > firstAt.getTime() ? contentChangedAt.at : null;
+  try {
+    const existingIds = new Set(
+      (
+        await fetchAllRows<{ id: string }>((from, to) => db.from("portfolios").select("id").order("id").range(from, to))
+      ).map((r) => r.id)
+    );
 
-    const { username, source: ghSource } = deriveGithubUsername(p.url);
-    const data = {
-      id: p.id,
-      slug: p.id,
-      name: p.name,
-      githubUsername: username,
-      githubProfileUrl: username ? githubProfileUrl(username) : null,
-      githubSource: ghSource,
-      portfolioUrl: p.url,
-      avatarUrl: username ? githubAvatarUrl(username) : null,
-      role: p.description ?? null, // verbatim upstream bracket text
-      description: null as string | null,
-      technologies: JSON.stringify(p.technologies ?? []),
-      letter: p.letter,
-      sourceSection: p.letter,
-      sourceRepository: REPOSITORY,
-      sourceLine: p.source.line ?? null,
-      sourceEntryHash: sha1Hex(`${p.name}|${p.url}|${p.description ?? ""}`),
-      firstSeenAt: firstAt,
-      lastSeenAt: lastAt,
-      sourceUpdatedAt,
-    };
+    const rows: PortfolioInsert[] = artifact.portfolios.map((p) => {
+      const history = firstSeen.get(p.id);
+      const firstAt = history?.at ?? new Date(artifact.generatedAt);
+      const lastAt = lastPresent.get(p.id)?.at ?? new Date(artifact.generatedAt);
+      const contentChangedAt = lastChanged.get(p.id);
+      const sourceUpdatedAt =
+        contentChangedAt && contentChangedAt.at.getTime() > firstAt.getTime() ? contentChangedAt.at : null;
+      const { username, source: ghSource } = deriveGithubUsername(p.url);
+      return {
+        id: p.id,
+        slug: p.id,
+        name: p.name,
+        github_username: username,
+        github_profile_url: username ? githubProfileUrl(username) : null,
+        github_source: ghSource,
+        portfolio_url: p.url,
+        avatar_url: username ? githubAvatarUrl(username) : null,
+        role: p.description ?? null, // verbatim upstream bracket text
+        description: null,
+        technologies: p.technologies ?? [],
+        letter: p.letter,
+        source_section: p.letter,
+        source_repository: REPOSITORY,
+        source_line: p.source.line ?? null,
+        source_entry_hash: sha1Hex(`${p.name}|${p.url}|${p.description ?? ""}`),
+        first_seen_at: firstAt.toISOString(),
+        last_seen_at: lastAt.toISOString(),
+        source_updated_at: sourceUpdatedAt?.toISOString() ?? null,
+        updated_at: new Date().toISOString(),
+      };
+    });
 
-    const existing = await db.portfolio.findUnique({ where: { id: p.id }, select: { id: true } });
-    if (existing) {
-      await db.portfolio.update({ where: { id: p.id }, data });
-      updated += 1;
-    } else {
-      await db.portfolio.create({ data });
-      inserted += 1;
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      check(await db.from("portfolios").upsert(rows.slice(i, i + CHUNK), { onConflict: "id" }), "upsert portfolios");
     }
+    const inserted = rows.filter((r) => !existingIds.has(r.id)).length;
+    const updated = rows.length - inserted;
+
+    // Entries removed upstream leave the directory (AI summaries cascade).
+    const keep = new Set(rows.map((r) => r.id));
+    const removed = [...existingIds].filter((id) => !keep.has(id));
+    for (let i = 0; i < removed.length; i += 200) {
+      check(await db.from("portfolios").delete().in("id", removed.slice(i, i + 200)), "delete removed portfolios");
+    }
+    console.log(`[seed] portfolios — ${inserted} inserted, ${updated} updated, ${removed.length} removed`);
+
+    // Git-history snapshots: idempotent replace.
+    check(await db.from("portfolio_count_snapshots").delete().eq("provenance", "git-history"), "clear git-history snapshots");
+    const snapshotRows: SnapshotInsert[] = snapshots.map((s) => ({
+      sync_run_id: run.id,
+      recorded_at: s.recordedAt.toISOString(),
+      total_portfolios: s.totalPortfolios,
+      portfolios_added: s.portfoliosAdded,
+      provenance: "git-history",
+      source_commit_sha: s.sourceCommitSha,
+    }));
+    for (let i = 0; i < snapshotRows.length; i += CHUNK) {
+      check(await db.from("portfolio_count_snapshots").insert(snapshotRows.slice(i, i + CHUNK)), "insert snapshots");
+    }
+
+    // Sync-run snapshot for THIS execution (provenance "sync-run").
+    const finalCount = artifact.portfolios.length;
+    const lastGitTotal = snapshots.length > 0 ? snapshots[snapshots.length - 1].totalPortfolios : 0;
+    check(
+      await db.from("portfolio_count_snapshots").insert({
+        sync_run_id: run.id,
+        recorded_at: new Date().toISOString(),
+        total_portfolios: finalCount,
+        portfolios_added: Math.max(0, finalCount - lastGitTotal),
+        portfolios_updated: 0,
+        provenance: "sync-run",
+        source_commit_sha: artifact.source.commit,
+      }),
+      "insert sync-run snapshot"
+    );
+
+    check(
+      await db
+        .from("sync_runs")
+        .update({
+          completed_at: new Date().toISOString(),
+          status: "success",
+          source_entry_count: finalCount,
+          inserted_count: inserted,
+          updated_count: updated,
+          removed_or_missing_count: removed.length,
+          error_summary:
+            unmatched.length > 0 ? `${unmatched.length} entries without git provenance (fallback applied)` : null,
+        })
+        .eq("id", run.id),
+      "complete sync run"
+    );
+  } catch (err) {
+    await db
+      .from("sync_runs")
+      .update({ completed_at: new Date().toISOString(), status: "failed", error_summary: String(err).slice(0, 500) })
+      .eq("id", run.id);
+    throw err;
   }
-  console.log(`[seed] portfolios upserted — ${inserted} inserted, ${updated} updated`);
 
-  // Git-history snapshots: idempotent replace (delete + bulk create).
-  await db.portfolioCountSnapshot.deleteMany({ where: { provenance: "git-history" } });
-  const CHUNK = 500;
-  for (let i = 0; i < snapshots.length; i += CHUNK) {
-    await db.portfolioCountSnapshot.createMany({ data: snapshots.slice(i, i + CHUNK).map((s) => ({ ...s, syncRunId: run.id })) });
-  }
-
-  // Final count verification from the authoritative artifact.
-  const finalCount = artifact.portfolios.length;
-  const lastGitTotal = snapshots.length > 0 ? snapshots[snapshots.length - 1].totalPortfolios : 0;
-
-  // Sync-run snapshot for THIS execution (provenance "sync-run").
-  await db.portfolioCountSnapshot.create({
-    data: {
-      syncRunId: run.id,
-      recordedAt: new Date(),
-      totalPortfolios: finalCount,
-      portfoliosAdded: Math.max(0, finalCount - lastGitTotal),
-      portfoliosUpdated: 0,
-      provenance: "sync-run",
-      sourceCommitSha: artifact.source.commit,
-    },
-  });
-
-  await db.syncRun.update({
-    where: { id: run.id },
-    data: {
-      completedAt: new Date(),
-      status: "success",
-      sourceEntryCount: finalCount,
-      insertedCount: inserted,
-      updatedCount: updated,
-      removedOrMissingCount: 0,
-      errorSummary: unmatched.length > 0 ? `${unmatched.length} entries without git provenance (fallback applied)` : null,
-    },
-  });
-
-  const totals = await db.portfolio.count();
-  const snapCount = await db.portfolioCountSnapshot.count();
-  console.log(`[seed] DONE — portfolios: ${totals}, snapshots: ${snapCount}, run: ${run.id}`);
-  console.log(`[seed] verified history range: ${snapshots[0]?.recordedAt.toISOString()} → ${snapshots[snapshots.length - 1]?.recordedAt.toISOString()}`);
+  const { count } = await db.from("portfolios").select("id", { count: "exact", head: true });
+  console.log(`[seed] DONE — portfolios: ${count}, git-history snapshots: ${snapshots.length}, run: ${run.id}`);
+  console.log(
+    `[seed] verified history range: ${snapshots[0]?.recordedAt.toISOString()} → ${snapshots[snapshots.length - 1]?.recordedAt.toISOString()}`
+  );
 }
 
-main()
-  .catch((err) => {
-    console.error("[seed] FAILED:", err);
-    process.exit(1);
-  })
-  .finally(() => db.$disconnect());
+main().catch((err) => {
+  console.error("[seed] FAILED:", err);
+  process.exit(1);
+});

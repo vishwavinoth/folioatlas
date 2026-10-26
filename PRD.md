@@ -79,7 +79,7 @@ root route, so the shipped information architecture is a hash-routed SPA on `/` 
 
 ## 5. Data pipeline (source of truth)
 
-✅ Implemented — `scripts/sync-portfolios.ts` → artifacts; `scripts/seed-db.ts` → database.
+✅ Implemented — `scripts/sync-portfolios.ts` → artifacts; `scripts/seed-db.ts` → Supabase.
 
 ```
 Upstream GitHub repo (README.md, branch auto-resolved)
@@ -125,32 +125,30 @@ smoothing, no interpolation, no fabrication from a single report.
 credentials never reach the browser. Providers: public default (no key) → ScreenshotOne when
 `SCREENSHOT_ONE_ACCESS_KEY` is set → `PREVIEW_PROVIDER=none` disables entirely with an explicit
 "unavailable" state (never a fabricated screenshot). Sites that block embedding get a graceful
-notice with an always-available open-in-new-tab action. 147 preview rows tracked in DB.
+notice with an always-available open-in-new-tab action.
 
 ## 8. Data model
 
-`prisma/schema.prisma` (SQLite, active) mirrors `supabase/migrations/0001_init.sql` (Postgres +
-GIN index + RLS) 1:1. Five models: `Portfolio`, `PortfolioAiSummary`, `PortfolioPreview`,
-`SyncRun`, `PortfolioCountSnapshot`. ⛔ The Supabase/Postgres kit is complete and documented
-(`supabase/README.md`) but **not executed against a live instance** — no credentials in this
-environment; honestly marked unverified.
+Supabase Postgres is the only database: `supabase/migrations/` (schema + GIN index + RLS +
+API grants). Five tables: `portfolios`, `portfolio_ai_summaries`, `portfolio_previews`,
+`sync_runs`, `portfolio_count_snapshots`. Setup and RLS verification: `supabase/README.md`.
 
-**Current verified database contents (2026-10-27):**
+**Expected contents after `bun run db:seed` (verified against a local Postgres, 2026-10-26):**
 
 | Table | Rows | Notes |
 |---|---|---|
-| Portfolio | 2,072 | 276 with inferred GitHub identity; 1,213 with upstream role text |
-| PortfolioCountSnapshot | 3,714 | 3,713 git-history + 1 sync-run; span 2019-09-13 → 2026-10-26 |
-| PortfolioPreview | 147 | Provider bookkeeping |
-| PortfolioAiSummary | 2 | Both `complete`, persisted + reused |
-| SyncRun | 3 | 1 success; 2 stale `running` from interrupted seeds — cleanup pending (see TEST_BACKLOG) |
+| portfolios | 2,072 | 276 with inferred GitHub identity; 1,213 with upstream role text |
+| portfolio_count_snapshots | 3,714 | 3,713 git-history + 1 sync-run per seed; span 2019-09-13 → present |
+| sync_runs | 1 per seed | Failed runs are marked `failed` with an error summary |
+| portfolio_ai_summaries | grows on demand | Generated via `POST /api/ai/summaries` (needs `GROQ_API_KEY`) |
+| portfolio_previews | 0 | Reserved; previews resolve per request without DB writes |
 
 ## 9. Security & privacy
 
 ✅ Implemented: URL validation rejects credentials/private hosts/dangerous schemes; SSRF-safe
 server-side preview resolution; AI layer is the security boundary (unknown slugs dropped, output
 shapes clamped by zod); rate limiting on AI endpoints (10/min search, 6/min summaries) and
-previews; parameterized Prisma queries; service-role keys server-only; search queries processed
+previews; parameterized Supabase queries; service-role keys server-only; search queries processed
 server-side (disclosed in the privacy page); `rel="noopener noreferrer"` on external links.
 
 ## 10. SEO

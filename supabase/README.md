@@ -1,62 +1,62 @@
-# FolioAtlas — Supabase setup (optional, for production deployment)
+# FolioAtlas — Supabase setup
 
-FolioAtlas runs **out of the box on a local Prisma/SQLite database** (`db/custom.db`).
-This directory contains everything needed to move the same data model to
-Supabase Postgres in production. **The remote database was NOT configured or
-verified in this environment** — no Supabase credentials exist here. Follow the
-steps below on a machine that has them.
+Supabase (Postgres + Row Level Security) is FolioAtlas's only database. The app
+reads with the publishable key (RLS: public read) and writes AI summaries with the
+service-role key on the server. The directory data itself is written only by
+`scripts/seed-db.ts`.
 
-## What is provided
+## Files
 
 | File | Purpose |
 |---|---|
-| `migrations/0001_init.sql` | Full schema: `portfolios`, `portfolio_ai_summaries`, `portfolio_previews`, `sync_runs`, `portfolio_count_snapshots` with constraints, indexes, GIN technology index and **Row Level Security** (public read, service-role-only writes). |
+| `migrations/0001_init.sql` | Schema: `portfolios`, `portfolio_ai_summaries`, `portfolio_previews`, `sync_runs`, `portfolio_count_snapshots` with constraints, indexes, GIN technology index and **Row Level Security** (public read, no public writes). |
+| `migrations/0002_api_grants.sql` | Explicit Data API grants (read for `anon`/`authenticated`, full for `service_role`). Required on newer projects that no longer grant table access automatically. |
 
-The SQL mirrors `prisma/schema.prisma` 1:1 (SQLite ↔ Postgres), including the
-`provenance` column that keeps growth-chart history trustworthy.
+Both files are idempotent — re-running them is safe.
 
-## Setup steps (on a machine with Supabase access)
+## Setup
 
-1. **Create the project** at https://supabase.com/dashboard (or `supabase init && supabase link`).
+1. **Create a project** at https://supabase.com/dashboard.
 
-2. **Apply the migration**
+2. **Apply the migrations**, in order — either paste each file into the SQL editor and
+   run it, or use the CLI:
    ```bash
-   # via CLI
+   supabase link --project-ref <ref>
    supabase db push
-   # or via SQL editor / psql
-   psql "$SUPABASE_DB_URL" -f supabase/migrations/0001_init.sql
    ```
 
-3. **Collect connection info** — Project Settings → API:
-   - `NEXT_PUBLIC_SUPABASE_URL` (project URL — safe for the browser)
-   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (anon key — safe for the browser, read-only under RLS)
-   - `SUPABASE_SERVICE_ROLE_KEY` (**server-only** — bypasses RLS; never ship to the client)
+3. **Collect the keys** — Project Settings → API:
+   - `NEXT_PUBLIC_SUPABASE_URL` — project URL
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — publishable / anon key (read-only under RLS)
+   - `SUPABASE_SERVICE_ROLE_KEY` — service-role / secret key (**server-only**)
 
-4. **Populate the database.** Two options:
-   - Seed from the verified git history (recommended, matches the local layer):
-     adapt `scripts/seed-db.ts` by swapping the Prisma client for the Supabase
-     one — the table/column names are identical.
-   - Or import `src/data/portfolios.generated.json` with a small ETL script,
-     then let the first scheduled sync create the sync-run snapshot.
-
-5. **Wire the sync job.** The GitHub Action (`.github/workflows/sync-portfolios.yml`)
-   regenerates the JSON artifacts daily. For Supabase, extend it with a step
-   that runs the DB sync (upsert + `sync_runs` + `portfolio_count_snapshots`)
-   using the service-role key as a repository secret.
-
-6. **Verify RLS** before going public:
-   ```sql
-   select * from pg_policies where schemaname = 'public';
+4. **Load the data** (one-time; ~1 minute, clones the upstream repo to replay its history):
+   ```bash
+   SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=... bun run db:seed
    ```
-   All five tables must show `public read …` SELECT policies for `anon` and
-   no INSERT/UPDATE/DELETE policies. Writes must fail with the anon key and
-   succeed only with the service-role key.
+   Expected output ends with `DONE — portfolios: 2072 …`.
+
+5. **Automate future syncs** — add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as GitHub
+   repository secrets. `.github/workflows/sync-database.yml` then re-syncs Supabase whenever a
+   data PR is merged (and on manual dispatch).
+
+6. **Configure the app** — set the three keys (plus `NEXT_PUBLIC_SITE_URL`) in Vercel →
+   Settings → Environment Variables and redeploy. `GET /api` should return
+   `{"status":"ok","portfolios":2072}`.
+
+## Verify RLS before going public
+
+```sql
+select tablename, policyname, cmd, roles from pg_policies where schemaname = 'public';
+```
+
+All five tables must show a `public read …` SELECT policy for `anon, authenticated` and
+no INSERT/UPDATE/DELETE policies. Writes must fail with the publishable key and succeed
+only with the service-role key.
 
 ## Security invariants
 
-- The service-role key lives **only** in server-side environment variables
-  (GitHub Actions secrets / your host's env config). It is never bundled into
-  client code.
-- The anon key grants read-only access under the RLS policies above.
-- All FolioAtlas API routes that write (AI summaries, previews, sync) run
-  server-side; the browser talks only to FolioAtlas's own API routes.
+- The service-role key lives **only** in server-side environment variables (Vercel env,
+  GitHub Actions secrets). It is never prefixed with `NEXT_PUBLIC_` or bundled into client code.
+- The publishable key grants read-only access under the RLS policies above.
+- Never disable RLS on these tables.

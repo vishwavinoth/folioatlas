@@ -1,5 +1,5 @@
 import { listTechnologies, getRelatedTechnologies } from "@/lib/store/queries";
-import { jsonError } from "@/lib/server/request";
+import { jsonError, serverError, PUBLIC_CACHE } from "@/lib/server/request";
 
 export const dynamic = "force-dynamic";
 
@@ -17,12 +17,11 @@ export async function GET(req: Request) {
       const meta = all.find((t) => t.slug === slug);
       if (!meta) return jsonError("not-found", 404);
       const related = await getRelatedTechnologies(slug, 8);
-      return Response.json({ technology: meta, related }, { headers: { "cache-control": "public, max-age=300" } });
+      return Response.json({ technology: meta, related }, { headers: { "cache-control": PUBLIC_CACHE } });
     }
     const all = await listTechnologies();
-    return Response.json({ technologies: all }, { headers: { "cache-control": "public, max-age=300" } });
+    return Response.json({ technologies: all }, { headers: { "cache-control": PUBLIC_CACHE } });
   } catch (err) {
-    console.error("[api/technologies] failed:", err);
-    return jsonError("technologies-failed", 500);
+    return serverError("api/technologies", err, "technologies-failed");
   }
 }

@@ -10,25 +10,28 @@ AI-generated portfolio summaries, verified growth analytics, website previews, a
 palette and full keyboard navigation.
 
 - Data: ground-truth upstream README → validated, deduplicated, classified index (nothing fabricated)
-- Persistence: Prisma/SQLite locally; 1:1 Supabase/Postgres migration kit in `supabase/`
+- Persistence: Supabase (Postgres + Row Level Security) via `@supabase/supabase-js`
 - Stack: Next.js 16 (App Router) · TypeScript strict · Tailwind CSS 4 · shadcn/ui · Recharts · next-themes
-- Pipeline: `scripts/sync-portfolios.ts` → JSON artifacts; `scripts/seed-db.ts` → provenance-grade database
-- Tests: 74 unit tests (`bun test`)
+- Pipeline: `scripts/sync-portfolios.ts` → JSON artifacts; `scripts/seed-db.ts` → provenance-grade Supabase sync
+- Tests: 89 unit tests (`bun test`)
 
 ## Quick start
 
-```bash
-bun install           # install dependencies
-bun run db:push       # create/update the local SQLite database
-bun run dev           # start dev server on :3000
-bun run lint          # ESLint
-bun test              # unit tests (parser, URLs, classification, AI intents, growth math, previews)
+Prerequisite: a Supabase project with `supabase/migrations/*.sql` applied
+(see [`supabase/README.md`](supabase/README.md)).
 
-# regenerate the directory data from the upstream repository
-bun scripts/sync-portfolios.ts
-# (re)build the database from the artifact + verified upstream git history
-bun scripts/seed-db.ts
-bun scripts/generate-og.ts   # regenerate the social preview image from current stats
+```bash
+bun install                 # install dependencies
+cp .env.example .env.local  # fill in the Supabase URL + keys
+bun run db:seed             # load the directory + verified history into Supabase
+bun run dev                 # start dev server on :3000
+
+bun run lint                # ESLint
+bun run typecheck           # TypeScript
+bun test                    # unit tests (parser, URLs, catalog queries, AI intents, growth, previews)
+
+bun run sync:data           # regenerate the directory artifact from upstream
+bun run og                  # regenerate the social preview image from current stats
 ```
 
 ## Features
@@ -94,9 +97,10 @@ Atomic publish ── tmp file → validate → rename (a failed sync never eras
 src/data/portfolios.generated.json + src/data/sync-report.generated.json
 ```
 
-### Provenance-grade database seeding (`scripts/seed-db.ts`)
+### Provenance-grade database sync (`scripts/seed-db.ts`)
 
-The database layer adds verifiable history that a single report cannot provide:
+Loads the reviewed artifact into Supabase (service-role key) and adds verifiable history that a
+single report cannot provide. Idempotent; entries removed upstream are deleted.
 
 - Replays the upstream repository's **actual git history** (~3,700 README commits).
 - `first_seen_at` = the first commit containing the entry (valid, normalized URL).
@@ -109,26 +113,29 @@ The database layer adds verifiable history that a single report cannot provide:
 
 ## Data model
 
-`prisma/schema.prisma` (SQLite, active) mirrors `supabase/migrations/0001_init.sql` (Postgres) 1:1:
+Defined in `supabase/migrations/` (typed in `src/lib/supabase/types.ts`):
 
 | Table | Purpose |
 |---|---|
 | `portfolios` | Directory entries with provenance (section, line, entry hash, first/last seen) |
 | `portfolio_ai_summaries` | Zod-validated AI summaries with model, status, source hash, errors |
-| `portfolio_previews` | Preview provider + status bookkeeping (URLs resolved server-side only) |
+| `portfolio_previews` | Reserved for preview capture status (previews resolve server-side, uncached) |
 | `sync_runs` | One row per synchronization execution with counts and commit SHA |
 | `portfolio_count_snapshots` | Growth-chart series with per-row provenance |
 
-See `supabase/README.md` for the optional production Supabase setup (RLS: public read,
-service-role-only writes).
+RLS: public read, service-role-only writes. The server reads with the publishable key and loads
+the (small) catalog once per instance with a 5-minute cache (`src/lib/store/queries.ts`); all
+search/filter/ranking logic is pure and unit-tested (`src/lib/store/catalog.ts`).
 
 ## Environment variables
 
-Copy `.env.example` to `.env` (never commit `.env`):
+Copy `.env.example` to `.env.local` (never commit it):
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `DATABASE_URL` | yes (core) | SQLite URL; local file works out of the box |
+| `NEXT_PUBLIC_SUPABASE_URL` | **yes** | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | **yes** | Publishable/anon key (read-only under RLS) |
+| `SUPABASE_SERVICE_ROLE_KEY` | for AI summaries + seeding | **Server-only**, bypasses RLS — never expose to the browser |
 | `NEXT_PUBLIC_SITE_URL` | production | Canonical origin used for metadata, sitemap, JSON-LD |
 | `GITHUB_TOKEN` | no | Optional read-only token if raw.githubusercontent rate limits you |
 | `GITHUB_OWNER/REPO/REF/README_PATH` | no | Upstream source overrides |
@@ -136,19 +143,19 @@ Copy `.env.example` to `.env` (never commit `.env`):
 | `GROQ_MODEL` | no | Any Groq JSON-mode model (default `llama-3.3-70b-versatile`) |
 | `PREVIEW_PROVIDER` | no | `none` disables previews; default public provider needs no key |
 | `SCREENSHOT_ONE_ACCESS_KEY` | no | Trusted screenshot provider key (server-only) |
-| `NEXT_PUBLIC_SUPABASE_URL` / `_PUBLISHABLE_KEY` | no | Supabase browser-safe config (optional) |
-| `SUPABASE_SERVICE_ROLE_KEY` | no | **Server-only**, bypasses RLS — never expose to the browser |
-| `EMBEDDING_*` | no | Only if pgvector semantic search is wired up |
 
-Server-only secrets must never be prefixed with `NEXT_PUBLIC_`. AI features degrade gracefully:
-without any provider, the app falls back to keyword search and hides generation actions.
+The Vercel ↔ Supabase integration's variable names (`NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+`SUPABASE_URL`) are accepted as fallbacks. Server-only secrets must never be prefixed with
+`NEXT_PUBLIC_`. AI features degrade gracefully: without `GROQ_API_KEY` the AI endpoints return 503
+and the UI falls back to keyword search.
 
 ## Routes (API)
 
 | Route | Purpose |
 |---|---|
+| `GET /api` | Health check (Supabase connectivity + row count) |
 | `GET /api/search` | Keyword search, filters, sort, pagination (validated params) |
-| `GET /api/stats` | Verified platform stats + discovery payloads (60s cache) |
+| `GET /api/stats` | Verified platform stats + discovery payloads (CDN-cached) |
 | `GET /api/growth?range=` | Verified growth series (30d/90d/1y/all) |
 | `GET /api/portfolios/[slug]` | Detail payload + related portfolios |
 | `GET /api/technologies[?slug=]` | Canonical technology list / landing metadata + related techs |
@@ -171,13 +178,17 @@ so the information architecture is a hash-routed SPA on `/` (e.g. `/#/portfolios
 | `#/collections/{slug}` | Curated collection (union of focus areas) |
 | `#/about`, `#/methodology`, `#/privacy` | Content pages (incl. AI + provenance documentation) |
 
-## Deployment (Vercel or any Node host)
+## Deployment (Vercel)
 
-1. Set `NEXT_PUBLIC_SITE_URL` (and optional AI/preview/Supabase vars).
-2. Build: `next build`.
-3. Start: `next start` (or the platform's adapter).
-4. Smoke-test after deploy: `/` 200, `/api/stats` 200, `/sitemap.xml` valid XML, `/robots.txt`
-   points at sitemap, one representative `#/portfolio/[slug]` page, no console errors.
+1. Supabase: apply `supabase/migrations/*.sql`, then run `bun run db:seed` once (or the
+   "Sync database" workflow) — see `supabase/README.md`.
+2. Vercel → Settings → Environment Variables: `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL`
+   (+ optional `GROQ_API_KEY`). Redeploy after changing them.
+3. Build and start use the framework defaults (`next build` / `next start`); no extra config.
+4. Smoke-test: `/api` → `{"status":"ok","portfolios":2072}`, `/api/stats` 200, `/sitemap.xml`
+   valid XML, one `#/portfolio/[slug]` page, no console errors. A `503 database-not-configured`
+   response means the Supabase variables are missing.
 
 ### Scheduled data synchronization
 
@@ -187,15 +198,16 @@ so the information architecture is a hash-routed SPA on `/` (e.g. `/#/portfolios
 2. If the index changed: run unit tests → open a PR with the diff (auditable)
 3. If upstream fetch/parsing fails: keep the previous artifact, fail the job visibly
 
-Extend the workflow with `bun scripts/seed-db.ts` (or a Supabase-aware variant) to record each
-successful sync as a `sync_runs` row + snapshot, growing the verified chart history automatically.
+When that PR is merged, `.github/workflows/sync-database.yml` runs `scripts/seed-db.ts` against
+Supabase (repository secrets `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`), recording a
+`sync_runs` row + snapshot so the verified chart history grows automatically.
 
-`ci.yml` runs lint, unit tests, and the production build on every push/PR.
+`ci.yml` runs lint, typecheck, unit tests, and the production build on every push/PR.
 
 ### Rollback
 
-Data rollbacks are Git operations — revert the data PR or checkout the previous artifact and
-redeploy. The sync pipeline never mutates data in place: artifacts are replaced atomically only
+Data rollbacks are Git operations — revert the data PR (or check out the previous artifact) and
+re-run the "Sync database" workflow. The sync pipeline never mutates data in place: artifacts are replaced atomically only
 after validation, and failed syncs never erase good data.
 
 ## Verification checklist (implemented)

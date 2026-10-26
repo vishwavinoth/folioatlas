@@ -44,24 +44,18 @@ simulated 5xx.
 ### T-07 · AI provider contract tests — P2
 With a mocked OpenAI-compatible endpoint: JSON-mode requests, malformed-JSON recovery via
 `extractJson`, rate-limit handling, `GROQ_MODEL` override propagation, token-absent fallback
-ordering (Groq → built-in → keyword). ⛔ Real-Groq smoke test additionally pending a key (KI-4).
+ordering (Groq → keyword). ⛔ Real-Groq smoke test additionally pending a key (KI-4).
 
-### T-08 · Seed idempotency + reconcile test — P2
-Run `scripts/seed-db.ts` twice on a copy of the DB; assert identical row counts and no duplicate
-sync_runs; assert interrupted runs can be reconciled (see T-09).
+### T-08 · Automated seed idempotency test — P2
+Verified manually against a local Postgres (2026-10-26: second run → 0 inserted / 2,072 updated,
+no duplicates). Automate it in CI with a Postgres service container + Supabase CLI.
 
-### T-09 · SyncRun reconcile script + test — P2 (resolves KI-1)
-Add `scripts/reconcile-sync-runs.ts`: mark `running` rows older than a threshold as `failed` with
-`errorSummary='reconciled: interrupted run'`; test against a DB copy; then clean the 2 stale rows
-in production data and record a corrected snapshot.
+### T-09 · Interrupted sync-run cleanup — P3
+`seed-db.ts` marks failed runs `failed`, but a killed process leaves `running`. Add a step that
+marks `running` rows older than a threshold as `failed`.
 
-### T-10 · Supabase parity tests — P3 ⛔ blocked on credentials
-Once `supabase/` is provisioned: run `0001_init.sql`, verify RLS (anon read / service write),
-execute the same store queries against Postgres and diff results vs SQLite for the seeded corpus.
-
-### T-11 · Schema migration path — P3
-Adopt `prisma migrate dev` history (currently `db push` + snapshot SQL) so schema evolution is
-auditable alongside `supabase/migrations/`.
+### T-10 · Live Supabase smoke test — P2
+After provisioning: run the RLS verification SQL in `supabase/README.md` and hit `GET /api`.
 
 ## B. Feature backlog (post-MVP, from PRD §20 + discovered needs)
 
@@ -87,7 +81,5 @@ auditable alongside `supabase/migrations/`.
 - [x] PRD.md living status (this release)
 - [x] CHANGELOG.md (this release)
 - [x] QA_STATUS.md (this release)
-- [x] Export & restore guidance (`README-EXPORT.md` in the export package)
 - [ ] CONTRIBUTING.md once external contributions are accepted
-- [ ] Ops runbook (restore drill, sync-failure response) — drafted inside `README-EXPORT.md`,
-      split out when a real deployment exists
+- [ ] Ops runbook (restore drill, sync-failure response)

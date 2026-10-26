@@ -1,5 +1,5 @@
 import { getPortfolioBySlug, getRelatedPortfolios } from "@/lib/store/queries";
-import { jsonError } from "@/lib/server/request";
+import { jsonError, serverError, PUBLIC_CACHE } from "@/lib/server/request";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +15,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }
     const portfolio = await getPortfolioBySlug(slug);
     if (!portfolio) return jsonError("not-found", 404);
     const related = await getRelatedPortfolios(portfolio, 4);
-    return Response.json({ portfolio, related }, { headers: { "cache-control": "public, max-age=60" } });
+    return Response.json({ portfolio, related }, { headers: { "cache-control": PUBLIC_CACHE } });
   } catch (err) {
-    console.error("[api/portfolios/detail] failed:", err);
-    return jsonError("detail-failed", 500);
+    return serverError("api/portfolios/detail", err, "detail-failed");
   }
 }

@@ -1,5 +1,5 @@
 import { searchPortfolios } from "@/lib/store/queries";
-import { parseSearchQuery, jsonError } from "@/lib/server/request";
+import { parseSearchQuery, serverError } from "@/lib/server/request";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +18,6 @@ export async function GET(req: Request) {
       headers: { "cache-control": "private, no-store" },
     });
   } catch (err) {
-    console.error("[api/search] failed:", err);
-    return jsonError("search-failed", 500);
+    return serverError("api/search", err, "search-failed");
   }
 }
