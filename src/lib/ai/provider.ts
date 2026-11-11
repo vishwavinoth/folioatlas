@@ -10,6 +10,7 @@
  * imported from client code. All JSON responses are validated by callers
  * with zod schemas before use.
  */
+import { envValue } from "@/lib/env";
 
 export type LlmProvider = "groq";
 
@@ -38,11 +39,11 @@ export class LlmRequestError extends Error {
 }
 
 export function groqConfigured(): boolean {
-  return Boolean(process.env.GROQ_API_KEY?.trim());
+  return Boolean(envValue("GROQ_API_KEY"));
 }
 
 export function groqModel(): string {
-  return process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+  return envValue("GROQ_MODEL") ?? "llama-3.3-70b-versatile";
 }
 
 export function llmConfigured(): boolean {
@@ -64,7 +65,7 @@ export function aiAvailable(): Promise<boolean> {
   const ok = (async () => {
     try {
       const res = await fetch(`https://api.groq.com/openai/v1/models/${encodeURIComponent(groqModel())}`, {
-        headers: { authorization: `Bearer ${process.env.GROQ_API_KEY?.trim()}` },
+        headers: { authorization: `Bearer ${envValue("GROQ_API_KEY")}` },
         signal: AbortSignal.timeout(4000),
       });
       if (!res.ok) console.warn(`[ai] Groq unavailable for model ${groqModel()}: http-${res.status}; AI features hidden`);
@@ -79,7 +80,7 @@ export function aiAvailable(): Promise<boolean> {
 }
 
 async function groqComplete(system: string, user: string, maxTokens: number): Promise<LlmResult> {
-  const key = process.env.GROQ_API_KEY as string;
+  const key = envValue("GROQ_API_KEY") as string;
   const model = groqModel();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30_000);

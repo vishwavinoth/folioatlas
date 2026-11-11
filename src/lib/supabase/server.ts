@@ -9,6 +9,7 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { envValue } from "@/lib/env";
 
 export type Db = SupabaseClient<Database>;
 
@@ -21,7 +22,7 @@ export class DatabaseNotConfiguredError extends Error {
 
 function env(...names: string[]): string | undefined {
   for (const name of names) {
-    const value = process.env[name]?.trim();
+    const value = envValue(name);
     if (value) return value;
   }
   return undefined;

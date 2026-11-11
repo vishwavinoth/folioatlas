@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 import { SITE_URL } from "@/lib/site/index-data";
 import { CREATOR } from "@/lib/site/creator";
+import { envValue } from "@/lib/env";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -42,8 +43,8 @@ export const metadata: Metadata = {
   creator: CREATOR.name,
   // Search console ownership tokens (set in the host's environment when available).
   verification: {
-    ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
-    ...(process.env.BING_SITE_VERIFICATION ? { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } } : {}),
+    ...(envValue("GOOGLE_SITE_VERIFICATION") ? { google: envValue("GOOGLE_SITE_VERIFICATION") } : {}),
+    ...(envValue("BING_SITE_VERIFICATION") ? { other: { "msvalidate.01": envValue("BING_SITE_VERIFICATION")! } } : {}),
   },
 };
 

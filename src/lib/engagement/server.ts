@@ -9,6 +9,7 @@
  */
 import { createHmac } from "node:crypto";
 import { dbReader, dbWriter } from "@/lib/supabase/server";
+import { envValue } from "@/lib/env";
 import type { EngagementCountRow } from "@/lib/supabase/types";
 
 export type EngagementCounts = { likes: number; views: number; visits: number };
@@ -24,7 +25,7 @@ const BOT_RE =
   /bot|crawl|spider|slurp|preview|fetch|scrape|headless|lighthouse|pingdom|monitor|uptime|curl|wget|python-requests|httpclient|axios|node-fetch/i;
 
 function salt(): string | null {
-  const value = process.env.ENGAGEMENT_SALT?.trim();
+  const value = envValue("ENGAGEMENT_SALT");
   return value && value.length >= 16 ? value : null;
 }
 
