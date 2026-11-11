@@ -43,7 +43,7 @@ const CACHE_TTL_MS = 5 * 60_000;
 /** An empty result usually means the database is still being seeded: retry soon. */
 const EMPTY_TTL_MS = 15_000;
 
-type Catalog = { entries: CatalogEntry[]; bySlug: Map<string, CatalogEntry> };
+type Catalog = { entries: CatalogEntry[]; bySlug: Map<string, CatalogEntry>; byId: Map<string, CatalogEntry> };
 type History = { snapshots: GrowthSnapshot[]; lastSyncRun: SyncRunRow | null };
 
 /** TTL cache that shares one in-flight load and never caches failures. */
@@ -80,7 +80,11 @@ const catalogCache = ttlCache<Catalog>(async () => {
     ),
   ]);
   const entries = buildCatalog(rows, summaries);
-  return { entries, bySlug: new Map(entries.map((e) => [e.wire.slug, e])) };
+  return {
+    entries,
+    bySlug: new Map(entries.map((e) => [e.wire.slug, e])),
+    byId: new Map(entries.map((e) => [e.wire.id, e])),
+  };
 }, (c) => c.entries.length === 0);
 
 const historyCache = ttlCache<History>(async () => {

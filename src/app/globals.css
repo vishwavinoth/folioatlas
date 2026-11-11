@@ -171,10 +171,14 @@ body {
   background: rgba(10, 132, 255, 0.25);
 }
 
-:focus-visible {
-  outline: 2px solid var(--fa-accent);
-  outline-offset: 2px;
-  border-radius: 4px;
+/* Default keyboard focus ring. Kept in the base layer so components that
+   draw their own focus treatment (outline-none + ring / focus-within) win;
+   unlayered, it overrode every Tailwind utility, including rounded-full. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--fa-accent);
+    outline-offset: 2px;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────

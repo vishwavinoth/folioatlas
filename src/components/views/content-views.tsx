@@ -3,7 +3,7 @@
 import type { ClientIndex } from "@/lib/portfolio/types";
 import { CLASSIFICATION_RULES } from "@/lib/portfolio/classify";
 import { useFeatures } from "@/lib/features/context";
-import { CREATOR } from "@/lib/site/creator";
+import { CREATOR, creatorLinks } from "@/lib/site/creator";
 
 function Prose({ children }: { children: React.ReactNode }) {
   return <div className="fa-prose max-w-2xl">{children}</div>;
@@ -75,9 +75,9 @@ export function AboutView({ index }: { index: ClientIndex }) {
 
         <Section title="The numbers">
           <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
-            The current index contains {index.stats.valid.toLocaleString()} validated portfolios, of which{" "}
-            {index.stats.withDescription.toLocaleString()} carry a short role description and{" "}
-            {index.stats.classified.toLocaleString()} have at least one focus-area label. {index.stats.quarantined}{" "}
+            The current index contains {index.stats.valid.toLocaleString("en-US")} validated portfolios, of which{" "}
+            {index.stats.withDescription.toLocaleString("en-US")} carry a short role description and{" "}
+            {index.stats.classified.toLocaleString("en-US")} have at least one focus-area label. {index.stats.quarantined}{" "}
             entr{index.stats.quarantined === 1 ? "y was" : "ies were"} quarantined by validation and{" "}
             {index.stats.duplicatesRemoved} duplicate{index.stats.duplicatesRemoved === 1 ? "" : "s"} removed during
             the last synchronization. The full report is described on the{" "}
@@ -90,23 +90,34 @@ export function AboutView({ index }: { index: ClientIndex }) {
 
         <Section title="Who built this">
           <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
-            FolioAtlas was designed and built by{" "}
-            <a className="text-[var(--fa-accent)] hover:underline" href={CREATOR.profileUrl} target="_blank" rel="noopener noreferrer">
+            FolioAtlas was designed and developed by{" "}
+            <a className="text-[var(--fa-accent)] hover:underline" href={CREATOR.portfolioUrl} target="_blank" rel="author noopener">
               {CREATOR.name}
+            </a>
+            , a {CREATOR.role.toLowerCase()}, as an independent tribute to the community list that inspired it —
+            {CREATOR.name.split(" ")[0]}&apos;s own portfolio is{" "}
+            <a className="text-[var(--fa-accent)] hover:underline" href={`/portfolio/${CREATOR.directorySlug}`}>
+              listed in the directory
             </a>{" "}
-            as an independent tribute to the community list that inspired it. Feedback, ideas and collaboration
-            requests are welcome.
+            too. Feedback, ideas and collaboration requests are welcome.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <a
-              href={CREATOR.profileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-10 items-center rounded-full bg-[var(--fa-accent)] px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--fa-accent-strong)]"
-            >
-              {CREATOR.contactLabel}
-              <span className="sr-only"> (opens in a new tab)</span>
-            </a>
+            {creatorLinks().map(({ label, href }, i) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="me noopener"
+                className={
+                  i === 0
+                    ? "inline-flex h-10 items-center rounded-full bg-[var(--fa-accent)] px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[var(--fa-accent-strong)]"
+                    : "glass-clear inline-flex h-10 items-center rounded-full px-5 text-sm font-medium transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.08]"
+                }
+              >
+                {label === "Portfolio" ? `View ${CREATOR.name.split(" ")[0]}'s portfolio` : label}
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            ))}
             <a
               href={`https://github.com/${index.source.repository}/blob/${index.source.branch}/CONTRIBUTING.md`}
               target="_blank"
@@ -125,7 +136,7 @@ export function AboutView({ index }: { index: ClientIndex }) {
 
 export function MethodologyView({ index }: { index: ClientIndex }) {
   const rules = CLASSIFICATION_RULES;
-  const { ai } = useFeatures();
+  const { ai, engagement } = useFeatures();
   return (
     <div className="motion-fade-in mx-auto w-full max-w-5xl px-4 pb-12 pt-8 sm:pt-10">
       <Prose>
@@ -155,7 +166,7 @@ export function MethodologyView({ index }: { index: ClientIndex }) {
             ). A daily synchronization job fetches the file, parses every entry in the alphabetical sections, and
             regenerates the index; each change is reviewed as a pull request before it is loaded into the directory
             database. This site was last synchronized on{" "}
-            {new Date(index.generatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}. If
+            {new Date(index.generatedAt).toLocaleDateString("en-US", { timeZone: "UTC", year: "numeric", month: "long", day: "numeric" })}. If
             upstream is unreachable, the last successfully generated index keeps serving — a failed sync never erases
             good data.
           </p>
@@ -201,7 +212,7 @@ export function MethodologyView({ index }: { index: ClientIndex }) {
                   <div key={rule.slug}>
                     <dt className="text-[13px] font-semibold">
                       {rule.label}
-                      <span className="ml-1.5 font-normal text-[var(--fa-text-secondary)]">({count.toLocaleString()})</span>
+                      <span className="ml-1.5 font-normal text-[var(--fa-text-secondary)]">({count.toLocaleString("en-US")})</span>
                     </dt>
                     <dd className="mt-0.5 text-[12.5px] leading-relaxed text-[var(--fa-text-secondary)]">{rule.blurb}</dd>
                   </div>
@@ -248,6 +259,22 @@ export function MethodologyView({ index }: { index: ClientIndex }) {
         </Section>
         )}
 
+        {engagement && (
+          <Section title="Likes, views and the leaderboard">
+            <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
+              Visitors can like portfolios; FolioAtlas also counts detail-page views and clicks through to each site.
+              Each visitor can like a portfolio once, and a view or visit counts at most once per visitor per day;
+              automated traffic is excluded and per-network daily caps limit ballot stuffing. The{" "}
+              <a className="text-[var(--fa-accent)] hover:underline" href="/leaderboard">
+                leaderboard
+              </a>{" "}
+              ranks portfolios by likes in the selected UTC day, ISO week, month or year (or by views), then by the
+              other metric, then by site visits. These numbers describe activity on FolioAtlas only — they are not a
+              rating of anyone&apos;s work.
+            </p>
+          </Section>
+        )}
+
         <Section title="Website previews and images">
           <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
             FolioAtlas uses no screenshot or thumbnail service and never fetches portfolio websites on the server.
@@ -272,7 +299,7 @@ export function MethodologyView({ index }: { index: ClientIndex }) {
 }
 
 export function PrivacyView() {
-  const { ai } = useFeatures();
+  const { ai, engagement } = useFeatures();
   return (
     <div className="motion-fade-in mx-auto w-full max-w-5xl px-4 pb-12 pt-8 sm:pt-10">
       <Prose>
@@ -285,7 +312,8 @@ export function PrivacyView() {
         <Section title="No accounts, no personal data">
           <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
             You can browse, search and filter the entire directory without an account, without signing in, and without
-            providing any information. The site has no registration system and stores no personal data.
+            providing any information. The site has no registration system and never stores names, email addresses
+            or IP addresses.
           </p>
         </Section>
 
@@ -304,10 +332,24 @@ export function PrivacyView() {
           <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
             The site is hosted on Vercel and the directory data is stored in a Supabase database. Like any web host,
             these providers process standard request data (such as IP address and user agent) to deliver pages and
-            protect the service; FolioAtlas itself does not store or analyze it. Your browser keeps one preference
-            locally — the light/dark theme you choose — which never leaves your device. No cookies are set.
+            protect the service; FolioAtlas itself does not keep IP addresses. Your browser stores a few things
+            locally — your light/dark theme, which portfolios you liked, and a random anonymous ID (see below). No
+            cookies are set.
           </p>
         </Section>
+
+        {engagement && (
+          <Section title="Likes, views and site visits">
+            <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">
+              To show how many people liked or viewed a portfolio — and to rank the leaderboard — FolioAtlas counts
+              anonymous, deduplicated activity. Your browser keeps a random ID that identifies nothing about you; the
+              server stores only a salted one-way hash of it, so each visitor can like a portfolio once and a view or a
+              click through to a site counts once per day. To limit abuse, a hash of your IP address combined with the
+              current date is stored with each action; it changes every day, so activity cannot be linked across days.
+              Automated traffic is ignored. Clearing your browser&apos;s site data resets the ID.
+            </p>
+          </Section>
+        )}
 
         <Section title="Third-party content">
           <p className="mt-3 text-[15px] leading-relaxed text-[var(--fa-text-secondary)]">

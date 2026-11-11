@@ -6,11 +6,13 @@ import { buildHref, useRoute, type Route } from "@/lib/router/router";
 import { paletteControls } from "@/components/command/palette-host";
 import { ThemeToggle } from "./theme-toggle";
 import { RELEASE_STAGE } from "@/lib/site/creator";
+import { useFeatures } from "@/lib/features/context";
 
 const NAV_ITEMS = [
   { href: "/", label: "Discover", match: (r: Route) => r.path === "/" },
   { href: "/portfolios", label: "Portfolios", match: (r: Route) => r.path.startsWith("/portfolios") },
   { href: "/technologies", label: "Technologies", match: (r: Route) => r.path.startsWith("/technologies") },
+  { href: "/leaderboard", label: "Leaderboard", match: (r: Route) => r.path === "/leaderboard", engagement: true },
   { href: "/about", label: "About", match: (r: Route) => r.path.startsWith("/about") },
 ];
 
@@ -18,6 +20,8 @@ const SOURCE_REPO_URL = "https://github.com/emmabostian/developer-portfolios";
 
 export function GlassNavigation() {
   const { route } = useRoute();
+  const { engagement } = useFeatures();
+  const navItems = NAV_ITEMS.filter((item) => !("engagement" in item) || engagement);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -73,8 +77,8 @@ export function GlassNavigation() {
         )}
 
         {/* Desktop links */}
-        <ul className="hidden items-center gap-0.5 md:flex">
-          {NAV_ITEMS.map((item) => {
+        <ul className="hidden items-center gap-0.5 lg:flex">
+          {navItems.map((item) => {
             const active = item.match(route);
             return (
               <li key={item.href}>
@@ -122,7 +126,7 @@ export function GlassNavigation() {
           </a>
 
           {/* Theme control lives in the mobile menu to keep the compact bar uncluttered (PRD §4.1). */}
-          <div className="hidden md:flex">
+          <div className="hidden lg:flex">
             <ThemeToggle />
           </div>
 
@@ -133,7 +137,7 @@ export function GlassNavigation() {
             aria-expanded={menuOpen}
             aria-controls="mobile-menu"
             aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--fa-text-secondary)] transition-colors hover:bg-black/[0.05] hover:text-foreground md:hidden dark:hover:bg-white/[0.07]"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--fa-text-secondary)] transition-colors hover:bg-black/[0.05] hover:text-foreground lg:hidden dark:hover:bg-white/[0.07]"
           >
             {menuOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
           </button>
@@ -145,10 +149,10 @@ export function GlassNavigation() {
         <div
           id="mobile-menu"
           ref={menuRef}
-          className="motion-fade-in glass mx-auto mt-2 max-w-5xl rounded-2xl p-2 md:hidden"
+          className="motion-fade-in glass mx-auto mt-2 max-w-5xl rounded-2xl p-2 lg:hidden"
         >
           <ul className="flex flex-col">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const active = item.match(route);
               return (
                 <li key={item.href}>

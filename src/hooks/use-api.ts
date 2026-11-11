@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { usePrefetchMap } from "./prefetch-context";
 
 /**
  * Minimal data-fetching hook with abort handling and explicit states.
@@ -15,30 +16,34 @@ export type FetchState<T> = {
   refetch: () => void;
 };
 
-export function useApi<T>(url: string | null, opts: { refreshKey?: string } = {}): FetchState<T> {
-  const [state, setState] = useState<{ data: T | null; loading: boolean; error: string | null }>(() => ({
-    data: null,
-    loading: Boolean(url),
-    error: null,
-  }));
-  const abortRef = useRef<AbortController | null>(null);
-  const [tick, setTick] = useState(0);
+type ApiState<T> = { data: T | null; loading: boolean; error: string | null; seededKey: string | null };
 
+export function useApi<T>(url: string | null, opts: { refreshKey?: string } = {}): FetchState<T> {
+  const prefetch = usePrefetchMap();
+  const [tick, setTick] = useState(0);
+  const key = `${url ?? ""}|${tick}|${opts.refreshKey ?? ""}`;
+
+  // Server-rendered data for this exact URL (skipped after an explicit refetch).
+  const seedFor = (k: string): ApiState<T> =>
+    url && tick === 0 && Object.prototype.hasOwnProperty.call(prefetch, url)
+      ? { data: prefetch[url] as T, loading: false, error: null, seededKey: k }
+      : { data: null, loading: Boolean(url), error: null, seededKey: null };
+
+  const [state, setState] = useState<ApiState<T>>(() => seedFor(key));
   const refetch = useCallback(() => setTick((t) => t + 1), []);
 
   // Render-time adjustment (React-recommended pattern): reset state when the
   // request identity changes, instead of calling setState inside an effect.
-  const [prevKey, setPrevKey] = useState(`${url ?? ""}|${tick}|${opts.refreshKey ?? ""}`);
-  const nextKey = `${url ?? ""}|${tick}|${opts.refreshKey ?? ""}`;
-  if (prevKey !== nextKey) {
-    setPrevKey(nextKey);
-    setState({ data: null, loading: Boolean(url), error: null });
+  const [prevKey, setPrevKey] = useState(key);
+  if (prevKey !== key) {
+    setPrevKey(key);
+    setState(seedFor(key));
   }
 
+  const seeded = state.seededKey === key;
   useEffect(() => {
-    if (!url) return;
+    if (!url || seeded) return;
     const controller = new AbortController();
-    abortRef.current = controller;
     let cancelled = false;
 
     fetch(url, { signal: controller.signal })
@@ -50,20 +55,20 @@ export function useApi<T>(url: string | null, opts: { refreshKey?: string } = {}
         return res.json() as Promise<T>;
       })
       .then((json) => {
-        if (!cancelled) setState({ data: json, loading: false, error: null });
+        if (!cancelled) setState({ data: json, loading: false, error: null, seededKey: null });
       })
       .catch((err: unknown) => {
         if (cancelled || (err instanceof Error && err.name === "AbortError")) return;
-        setState({ data: null, loading: false, error: err instanceof Error ? err.message : "request-failed" });
+        setState({ data: null, loading: false, error: err instanceof Error ? err.message : "request-failed", seededKey: null });
       });
 
     return () => {
       cancelled = true;
       controller.abort();
     };
-  }, [url, tick, opts.refreshKey]);
+  }, [url, tick, opts.refreshKey, seeded]);
 
-  return { ...state, refetch };
+  return { data: state.data, loading: state.loading, error: state.error, refetch };
 }
 
 /** Debounce any rapidly-changing value (search input → API URL). */

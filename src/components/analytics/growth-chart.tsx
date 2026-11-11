@@ -27,12 +27,12 @@ type RangeKey = (typeof RANGES)[number]["key"];
 function formatBucketDate(iso: string, range: RangeKey): string {
   const d = new Date(iso);
   if (range === "30d" || range === "90d") {
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return d.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric" });
   }
   if (range === "1y") {
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
+    return d.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "2-digit" });
   }
-  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  return d.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", year: "numeric" });
 }
 
 type TooltipPayloadEntry = { payload?: { date: string; total: number; added: number } };
@@ -45,10 +45,10 @@ function GrowthTooltip({ active, payload, range }: { active?: boolean; payload?:
     <div className="rounded-xl border border-[var(--surface-border)] bg-background/95 px-3 py-2 text-xs shadow-lg backdrop-blur">
       <p className="font-medium">{formatBucketDate(p.date, range)}</p>
       <p className="mt-0.5 text-[var(--fa-text-secondary)]">
-        Cumulative: <span className="font-medium text-foreground">{p.total.toLocaleString()}</span> portfolios
+        Cumulative: <span className="font-medium text-foreground">{p.total.toLocaleString("en-US")}</span> portfolios
       </p>
       <p className="text-[var(--fa-text-secondary)]">
-        Added in period: <span className="font-medium text-[var(--fa-accent)]">+{p.added.toLocaleString()}</span>
+        Added in period: <span className="font-medium text-[var(--fa-accent)]">+{p.added.toLocaleString("en-US")}</span>
       </p>
     </div>
   );
@@ -78,8 +78,8 @@ export function GrowthChart({ initialRange = "1y" }: { initialRange?: RangeKey }
 
   const coverage = useMemo(() => {
     if (!data?.coverageFrom || !data?.coverageTo) return null;
-    const from = new Date(data.coverageFrom).toLocaleDateString("en-US", { month: "short", year: "numeric" });
-    const to = new Date(data.coverageTo).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    const from = new Date(data.coverageFrom).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", year: "numeric" });
+    const to = new Date(data.coverageTo).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" });
     return { from, to };
   }, [data]);
 
@@ -100,7 +100,7 @@ export function GrowthChart({ initialRange = "1y" }: { initialRange?: RangeKey }
       className="surface-card rounded-2xl p-4 sm:p-5"
       aria-label={
         growthSummary
-          ? `Portfolio growth chart: ${growthSummary.total.toLocaleString()} portfolios as of ${growthSummary.toLabel}, up ${growthSummary.delta.toLocaleString()} since ${growthSummary.fromLabel}.`
+          ? `Portfolio growth chart: ${growthSummary.total.toLocaleString("en-US")} portfolios as of ${growthSummary.toLabel}, up ${growthSummary.delta.toLocaleString("en-US")} since ${growthSummary.fromLabel}.`
           : "Portfolio growth chart"
       }
     >
@@ -112,7 +112,7 @@ export function GrowthChart({ initialRange = "1y" }: { initialRange?: RangeKey }
           </h3>
           <p className="mt-0.5 text-xs text-[var(--fa-text-secondary)]">
             {growthSummary
-              ? `${growthSummary.total.toLocaleString()} indexed · +${growthSummary.delta.toLocaleString()} over the ${RANGES.find((r) => r.key === range)?.label.toLowerCase()} window`
+              ? `${growthSummary.total.toLocaleString("en-US")} indexed · +${growthSummary.delta.toLocaleString("en-US")} over the ${RANGES.find((r) => r.key === range)?.label.toLowerCase()} window`
               : "Cumulative count of indexed portfolios over time"}
           </p>
         </figcaption>
@@ -147,7 +147,7 @@ export function GrowthChart({ initialRange = "1y" }: { initialRange?: RangeKey }
             <p className="text-sm font-medium">Verified history is still accumulating</p>
             <p className="max-w-md text-xs leading-relaxed text-[var(--fa-text-secondary)]">
               {data && data.points.length === 1
-                ? `The first verified snapshot is from ${new Date(data.points[0].date).toLocaleDateString()}. Each successful sync records a new snapshot, and the chart grows from real data only.`
+                ? `The first verified snapshot is from ${new Date(data.points[0].date).toLocaleDateString("en-US", { timeZone: "UTC" })}. Each successful sync records a new snapshot, and the chart grows from real data only.`
                 : "No verified snapshots exist for this range yet. Pick a wider range — the chart only shows history that can be proven."}
             </p>
           </div>
@@ -174,7 +174,7 @@ export function GrowthChart({ initialRange = "1y" }: { initialRange?: RangeKey }
                 axisLine={false}
                 width={44}
                 domain={["dataMin - 20", "dataMax + 20"]}
-                tickFormatter={(v: number) => v.toLocaleString()}
+                tickFormatter={(v: number) => v.toLocaleString("en-US")}
               />
               <Tooltip content={<GrowthTooltip range={range} />} cursor={{ stroke: "var(--fa-accent)", strokeOpacity: 0.3 }} />
               <Area
@@ -193,7 +193,7 @@ export function GrowthChart({ initialRange = "1y" }: { initialRange?: RangeKey }
 
       {coverage && chartData.length >= 2 && (
         <p className="mt-2 text-[11px] leading-relaxed text-[var(--fa-text-secondary)]">
-          Verified history: {coverage.from} → {coverage.to} · {data?.totalSnapshotsInRange.toLocaleString()} snapshots ·
+          Verified history: {coverage.from} → {coverage.to} · {data?.totalSnapshotsInRange.toLocaleString("en-US")} snapshots ·
           derived from upstream repository commits and recorded syncs — no interpolation.
         </p>
       )}

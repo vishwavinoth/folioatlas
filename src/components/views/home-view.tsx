@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { BadgeCheck, Compass, ExternalLink, Lock, ShieldCheck, Sparkles, Tags, Users } from "lucide-react";
+import { ArrowRight, BadgeCheck, Compass, ExternalLink, Flame, Lock, ShieldCheck, Sparkles, Tags, Users } from "lucide-react";
 import type { StatsResponse } from "@/lib/api-types";
 import { useApi } from "@/hooks/use-api";
 import { GlassSearchField } from "@/components/search/glass-search-field";
@@ -16,7 +16,7 @@ const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString("en-US", { timeZone: "UTC", year: "numeric", month: "short", day: "numeric" });
 }
 
 function HeroStatsSkeleton() {
@@ -47,7 +47,7 @@ export function HomeView() {
         <p className="inline-flex items-center gap-1.5 rounded-full border border-[var(--surface-border)] bg-black/[0.03] px-3 py-1 text-xs font-medium text-[var(--fa-text-secondary)] dark:bg-white/[0.05]">
           <BadgeCheck className="h-3.5 w-3.5 text-[var(--fa-accent)]" aria-hidden="true" />
           {stats
-            ? `${stats.totalPortfolios.toLocaleString()} real portfolios · verified against upstream commits`
+            ? `${stats.totalPortfolios.toLocaleString("en-US")} real portfolios · verified against upstream commits`
             : "Real portfolios · verified against upstream commits"}
         </p>
 
@@ -109,9 +109,9 @@ export function HomeView() {
         ) : (
           <dl className="mx-auto mt-8 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Verified platform statistics">
             {[
-              { label: "Portfolios indexed", value: stats.totalPortfolios.toLocaleString(), hint: `first entry ${fmtDate(stats.firstEntryAt)}` },
+              { label: "Portfolios indexed", value: stats.totalPortfolios.toLocaleString("en-US"), hint: `first entry ${fmtDate(stats.firstEntryAt)}` },
               { label: "Focus areas", value: String(stats.technologyCount), hint: "canonical, transparently derived" },
-              { label: "With role text", value: stats.withRoleText.toLocaleString(), hint: "supplied by the source" },
+              { label: "With role text", value: stats.withRoleText.toLocaleString("en-US"), hint: "supplied by the source" },
               { label: "Last successful sync", value: fmtDate(stats.lastSyncAt), hint: stats.lastSyncCommit ? `commit ${stats.lastSyncCommit.slice(0, 7)}` : "" },
             ].map((s) => (
               <div key={s.label} className="surface-card rounded-xl px-3.5 py-3 text-left">
@@ -134,6 +134,35 @@ export function HomeView() {
         <GrowthChart initialRange="1y" />
       </section>
 
+      {/* ── Trending this week (real likes; hidden until there are some) ─── */}
+      {data && data.trending.length > 0 && (
+        <section aria-labelledby="trending-heading" className="mx-auto max-w-5xl px-4 py-8">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 id="trending-heading" className="flex items-center gap-1.5 text-xl font-semibold tracking-tight">
+                <Flame className="h-5 w-5 text-orange-500" aria-hidden="true" />
+                Trending this week
+              </h2>
+              <p className="mt-1 text-sm text-[var(--fa-text-secondary)]">
+                The portfolios FolioAtlas visitors liked most since Monday.
+              </p>
+            </div>
+            <a
+              href="/leaderboard"
+              className="hidden shrink-0 items-center gap-1 text-sm font-medium text-[var(--fa-accent)] hover:underline sm:inline-flex"
+            >
+              Full leaderboard
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </a>
+          </div>
+          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {data.trending.map((item) => (
+              <PortfolioCard key={item.portfolio.id} portfolio={item.portfolio} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* ── Recently added (verified first-seen) ─────────────────────────── */}
       <section aria-labelledby="recent-heading" className="mx-auto max-w-5xl px-4 py-8">
         <div className="flex items-end justify-between gap-4">
@@ -150,7 +179,7 @@ export function HomeView() {
             className="hidden shrink-0 items-center gap-1 text-sm font-medium text-[var(--fa-accent)] hover:underline sm:inline-flex"
           >
             Browse newest
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </a>
         </div>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -180,7 +209,7 @@ export function HomeView() {
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="text-[15px] font-semibold">{c.label}</h3>
                     <span className="shrink-0 rounded-full bg-[var(--fa-accent)]/10 px-2 py-0.5 text-xs font-medium text-[var(--fa-accent)]">
-                      {c.count.toLocaleString()}
+                      {c.count.toLocaleString("en-US")}
                     </span>
                   </div>
                   <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fa-text-secondary)]">{c.description}</p>
@@ -284,7 +313,7 @@ export function HomeView() {
             {
               icon: ShieldCheck,
               title: "Verified history",
-              body: `Growth charts use ${stats?.historySnapshotCount.toLocaleString() ?? "recorded"} snapshots derived from real upstream commits and successful syncs — never from a single generated report.`,
+              body: `Growth charts use ${stats?.historySnapshotCount.toLocaleString("en-US") ?? "recorded"} snapshots derived from real upstream commits and successful syncs — never from a single generated report.`,
               href: "/methodology",
               link: "Data provenance",
             },
@@ -292,7 +321,7 @@ export function HomeView() {
               ? {
                   icon: Tags,
                   title: "Labeled AI features",
-                  body: `${stats?.aiSummaryCount.toLocaleString() ?? "0"} AI summaries stored so far. Every AI output is labeled as such, grounded only in source data, and falls back gracefully.`,
+                  body: `${stats?.aiSummaryCount.toLocaleString("en-US") ?? "0"} AI summaries stored so far. Every AI output is labeled as such, grounded only in source data, and falls back gracefully.`,
                   href: "/methodology",
                   link: "AI guardrails",
                 }

@@ -6,6 +6,9 @@ import type { WirePortfolio } from "@/lib/api-types";
 import { technologyLabel } from "@/lib/portfolio/classify";
 import { copyWithToast } from "@/lib/notify";
 import { TechnologyChip } from "./technology-chip";
+import { LikeButton } from "@/components/engagement/like-button";
+import { useFeatures } from "@/lib/features/context";
+import { compactCount, track, useEngagement } from "@/lib/engagement/client";
 
 function prettyHost(url: string): string {
   try {
@@ -24,6 +27,11 @@ function prettyHost(url: string): string {
 export function PortfolioCard({ portfolio }: { portfolio: WirePortfolio }) {
   const [copied, setCopied] = useState(false);
   const host = prettyHost(portfolio.portfolioUrl);
+  const { engagement } = useFeatures();
+  const views = useEngagement(portfolio.slug, engagement)?.views ?? null;
+  const onVisit = () => {
+    if (engagement) track(portfolio.slug, "visit");
+  };
   const initials = portfolio.name.slice(0, 2).toUpperCase();
 
   const copyLink = async () => {
@@ -54,7 +62,7 @@ export function PortfolioCard({ portfolio }: { portfolio: WirePortfolio }) {
           )}
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-[15px] font-semibold leading-snug">
+          <h3 className="line-clamp-2 break-words text-[15px] font-semibold leading-snug">
             <a
               href={`/portfolio/${portfolio.slug}`}
               className="rounded-sm focus-visible:outline-offset-4"
@@ -63,8 +71,15 @@ export function PortfolioCard({ portfolio }: { portfolio: WirePortfolio }) {
               {portfolio.name}
             </a>
           </h3>
-          <p className="truncate text-[13px] text-[var(--fa-text-secondary)]" title={portfolio.portfolioUrl}>
-            {host}
+          <p className="flex min-w-0 items-center gap-1 text-[13px] text-[var(--fa-text-secondary)]">
+            <span className="truncate" title={portfolio.portfolioUrl}>
+              {host}
+            </span>
+            {views !== null && views > 0 && (
+              <span className="shrink-0 tabular-nums" title={`${views} views on FolioAtlas`}>
+                · {compactCount(views)} view{views === 1 ? "" : "s"}
+              </span>
+            )}
           </p>
         </div>
         {portfolio.hasAiSummary && (
@@ -76,6 +91,7 @@ export function PortfolioCard({ portfolio }: { portfolio: WirePortfolio }) {
             AI
           </span>
         )}
+        <LikeButton slug={portfolio.slug} name={portfolio.name} />
       </div>
 
       {/* Role / description (verbatim upstream text) */}
@@ -116,6 +132,8 @@ export function PortfolioCard({ portfolio }: { portfolio: WirePortfolio }) {
           href={portfolio.portfolioUrl}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={onVisit}
+          onAuxClick={onVisit}
           className="inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[var(--surface-border)] px-3 text-xs font-medium text-[var(--fa-text-secondary)] transition-colors hover:text-foreground"
         >
           Visit site

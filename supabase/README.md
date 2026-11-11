@@ -9,10 +9,11 @@ service-role key on the server. The directory data itself is written only by
 
 | File | Purpose |
 |---|---|
-| `migrations/0001_init.sql` | Schema: `portfolios`, `portfolio_ai_summaries`, `portfolio_previews`, `sync_runs`, `portfolio_count_snapshots` with constraints, indexes, GIN technology index and **Row Level Security** (public read, no public writes). |
+| `migrations/0001_init.sql` | Schema: `portfolios`, `portfolio_ai_summaries`, `sync_runs`, `portfolio_count_snapshots` with constraints, indexes, GIN technology index and **Row Level Security** (public read, no public writes). |
 | `migrations/0002_api_grants.sql` | Explicit Data API grants (read for `anon`/`authenticated`, full for `service_role`). Required on newer projects that no longer grant table access automatically. |
+| `migrations/0003_engagement.sql` | Likes, views and site visits: two locked-down tables (RLS, no Data API access), public aggregate functions and service-role-only write functions. |
 
-Both files are idempotent — re-running them is safe.
+All migrations are idempotent — re-running them is safe.
 
 ## Setup
 

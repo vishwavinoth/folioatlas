@@ -70,6 +70,29 @@ bun run og                  # regenerate the social preview image from current s
 | `Ctrl/Cmd + Enter` | Open the selected result in a new tab |
 | `?` | Keyboard shortcuts help panel |
 
+### Likes, views and the leaderboard
+- **Likes** (one per anonymous visitor), **views** of portfolio pages and **site visits** (clicks
+  through) are counted once per visitor per day; bots are ignored and per-network daily caps limit
+  abuse. Only salted hashes are stored — a random visitor ID lives in localStorage (no cookies), and
+  the IP hash rotates daily (`src/lib/engagement/server.ts`, `supabase/migrations/0003_engagement.sql`).
+- **`/leaderboard`** (Product Hunt style): daily / weekly / monthly / yearly / all-time rankings by
+  likes or views, with date navigation; the home page shows "Trending this week" once there are likes.
+- Hidden entirely unless `ENGAGEMENT_SALT` and `SUPABASE_SECRET_KEY` are set (no dead buttons).
+
+### SEO and AI discoverability
+- Pages are server-rendered **with their data** (directory lists, profiles, leaderboard): the page
+  embeds the exact API payloads its views request (`src/lib/store/payloads.ts`, `src/hooks/prefetch-context.tsx`),
+  so crawlers that do not run JavaScript see real content.
+- Per-route titles/descriptions, canonical URLs, Open Graph/Twitter cards, real 404s, `noindex` for
+  query URLs and for thin profiles (no role text). JSON-LD `@graph`: `WebSite` + `SearchAction`, the
+  creator `Person`, `CollectionPage` + `ItemList`, `ProfilePage`, `BreadcrumbList`.
+- Per-portfolio social cards at `/og/portfolio/{slug}` (name, role, focus areas).
+- `/sitemap.xml` (listing pages + every profile with role text, real `lastmod`), `/robots.txt`
+  (search engines + named AI crawlers welcome, `/api/` blocked, previews disallowed), `/llms.txt` and
+  `/llms-full.txt` (llmstxt.org), web manifest + icons, `humans.txt`, `.well-known/security.txt`,
+  security headers (no framing, nosniff, referrer/permissions policies). Search console tokens via
+  `GOOGLE_SITE_VERIFICATION` / `BING_SITE_VERIFICATION`.
+
 ### Website previews
 No screenshot or thumbnail service is used. Cards stay text-first (name, domain, role, focus areas); the
 in-page preview dialog embeds the portfolio site itself on demand. Sites that block embedding via
@@ -120,8 +143,12 @@ Defined in `supabase/migrations/` (typed in `src/lib/supabase/types.ts`):
 | `portfolio_ai_summaries` | Zod-validated AI summaries with model, status, source hash, errors |
 | `sync_runs` | One row per synchronization execution with counts and commit SHA |
 | `portfolio_count_snapshots` | Growth-chart series with per-row provenance |
+| `portfolio_reactions` | Likes: one row per (portfolio, hashed visitor) |
+| `portfolio_events` | Views and site visits: one row per (portfolio, kind, hashed visitor, UTC day) |
 
-RLS: public read, service-role-only writes. The server reads with the publishable key and loads
+RLS: public read, service-role-only writes. The engagement tables are not readable at all through
+the Data API; only aggregate functions (`engagement_counts`, `engagement_leaderboard`) are public,
+and writes go through service-role-only functions. The server reads with the publishable key and loads
 the (small) catalog once per instance with a 5-minute cache (`src/lib/store/queries.ts`); all
 search/filter/ranking logic is pure and unit-tested (`src/lib/store/catalog.ts`).
 
@@ -139,6 +166,8 @@ Copy `.env.example` to `.env.local` (never commit it):
 | `UPSTREAM_OWNER/REPO/REF/README_PATH` | no | Upstream source overrides (not `GITHUB_*`, which Actions reserves) |
 | `GROQ_API_KEY` | no | Enables Groq for AI search intents + summaries (server-only) |
 | `GROQ_MODEL` | no | Any Groq JSON-mode model (default `llama-3.3-70b-versatile`) |
+| `ENGAGEMENT_SALT` | for likes/views | Random 32+ char secret for anonymous hashing; never change once live |
+| `GOOGLE_SITE_VERIFICATION` / `BING_SITE_VERIFICATION` | no | Search console ownership tokens |
 
 The Vercel ↔ Supabase integration's variable names (`NEXT_PUBLIC_SUPABASE_ANON_KEY`,
 `SUPABASE_URL`) are accepted as fallbacks. Server-only secrets must never be prefixed with
@@ -157,6 +186,11 @@ and the UI falls back to keyword search.
 | `GET /api/technologies[?slug=]` | Canonical technology list / landing metadata + related techs |
 | `POST /api/ai/search` | Natural-language search (rate-limited, validated intent, real query) |
 | `POST /api/ai/summaries` | Generate/refresh one summary (rate-limited, persisted, reused) |
+| `GET /api/engagement?slugs=` | All-time likes/views/visits for up to 100 portfolios (no cache) |
+| `POST /api/engagement` | Record a view or site visit (`{slug, kind, vid}`; always 204) |
+| `POST /api/reactions` | Like/unlike (`{slug, vid, liked}` → `{liked, likes}`; 429 at the daily cap) |
+| `GET /api/leaderboard?period=&date=&metric=` | Ranked portfolios for a UTC day/week/month/year/all time |
+| `GET /og/portfolio/[slug]` | 1200×630 social card for a portfolio page |
 
 ## Routes (app)
 
@@ -173,7 +207,9 @@ but `noindex`. Old `/#/…` links redirect to their clean equivalents.
 | `/portfolio/{slug}` | Shareable developer profile page |
 | `/technologies`, `/technologies/{slug}` | Focus-area index and landing pages |
 | `/collections/{slug}` | Curated collection (union of focus areas) |
+| `/leaderboard` | Most liked / viewed portfolios by period |
 | `/about`, `/methodology`, `/privacy` | Content pages |
+| `/sitemap.xml`, `/robots.txt`, `/llms.txt`, `/llms-full.txt`, `/manifest.webmanifest` | Crawler + app metadata |
 
 ## Deployment (Vercel)
 

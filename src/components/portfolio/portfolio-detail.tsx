@@ -11,6 +11,8 @@ import {
   Eye,
   Github,
   Globe,
+  Heart,
+  MousePointerClick,
   RefreshCw,
   Share2,
   ShieldCheck,
@@ -23,6 +25,8 @@ import { technologyLabel } from "@/lib/portfolio/classify";
 import { TechnologyChip } from "@/components/directory/technology-chip";
 import { PortfolioCard } from "@/components/directory/portfolio-card";
 import { useFeatures } from "@/lib/features/context";
+import { LikeButton } from "@/components/engagement/like-button";
+import { compactCount, track, useEngagement } from "@/lib/engagement/client";
 import { copyWithToast, toast } from "@/lib/notify";
 import { PreviewDialog } from "@/components/preview/preview-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,7 +35,7 @@ import { NotFoundState, ErrorState } from "@/components/feedback/states";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString("en-US", { timeZone: "UTC", year: "numeric", month: "short", day: "numeric" });
 }
 
 function prettyHost(url: string): string {
@@ -60,7 +64,16 @@ export function PortfolioDetail({ slug }: { slug: string }) {
   // for a refresh; result replaces the local view immediately.
   const summary = summaryOverride ?? portfolio?.aiSummary ?? null;
   // Generation needs a configured AI provider; refresh is rate-limited server-side.
-  const { ai: canGenerate } = useFeatures();
+  const { ai: canGenerate, engagement } = useFeatures();
+  const counts = useEngagement(slug, engagement);
+
+  // One view per visitor per day is counted server-side; bots are ignored.
+  useEffect(() => {
+    if (engagement && portfolio) track(slug, "view");
+  }, [engagement, portfolio, slug]);
+  const onVisit = () => {
+    if (engagement) track(slug, "visit");
+  };
 
   const generateSummary = async () => {
     if (!portfolio) return;
@@ -186,7 +199,7 @@ export function PortfolioDetail({ slug }: { slug: string }) {
               </Button>
             )}
             <Button asChild>
-              <a href={portfolio.portfolioUrl} target="_blank" rel="noopener noreferrer">
+              <a href={portfolio.portfolioUrl} target="_blank" rel="noopener noreferrer" onClick={onVisit} onAuxClick={onVisit}>
                 <ExternalLink className="mr-2 h-4 w-4" aria-hidden="true" />
                 Visit website
                 <span className="sr-only">(opens in a new tab)</span>
@@ -196,6 +209,7 @@ export function PortfolioDetail({ slug }: { slug: string }) {
               {copied ? <Check className="mr-2 h-4 w-4 text-[var(--fa-success)]" aria-hidden="true" /> : <Share2 className="mr-2 h-4 w-4" aria-hidden="true" />}
               {copied ? "Link copied" : "Share"}
             </Button>
+            <LikeButton slug={slug} name={portfolio.name} variant="button" />
           </div>
         </div>
       </header>
@@ -230,7 +244,7 @@ export function PortfolioDetail({ slug }: { slug: string }) {
                 Preview in page
               </Button>
               <Button variant="outline" size="sm" asChild>
-                <a href={portfolio.portfolioUrl} target="_blank" rel="noopener noreferrer">
+                <a href={portfolio.portfolioUrl} target="_blank" rel="noopener noreferrer" onClick={onVisit} onAuxClick={onVisit}>
                   Open in new tab
                   <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" />
                   <span className="sr-only">(opens in a new tab)</span>
@@ -305,7 +319,37 @@ export function PortfolioDetail({ slug }: { slug: string }) {
         </div>
 
         {/* Metadata column */}
-        <aside className="lg:col-span-2">
+        <aside className="flex flex-col gap-6 lg:col-span-2">
+          {engagement && (
+            <section aria-labelledby="activity-heading" className="surface-card rounded-2xl p-4 sm:p-5">
+              <h2 id="activity-heading" className="text-[15px] font-semibold tracking-tight">
+                On FolioAtlas
+              </h2>
+              <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
+                {[
+                  { label: "Likes", value: counts?.likes, Icon: Heart },
+                  { label: "Views", value: counts?.views, Icon: Eye },
+                  { label: "Site visits", value: counts?.visits, Icon: MousePointerClick },
+                ].map(({ label, value, Icon }) => (
+                  <div key={label} className="rounded-xl bg-black/[0.03] px-2 py-2.5 dark:bg-white/[0.04]">
+                    <dt className="flex items-center justify-center gap-1 text-[11px] text-[var(--fa-text-secondary)]">
+                      <Icon className="h-3 w-3" aria-hidden="true" />
+                      {label}
+                    </dt>
+                    <dd className="mt-0.5 text-lg font-semibold tabular-nums">
+                      {value === undefined ? <Skeleton className="mx-auto h-6 w-8" /> : compactCount(value)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="mt-3 text-[11px] leading-relaxed text-[var(--fa-text-secondary)]">
+                Anonymous, deduplicated activity from FolioAtlas visitors.{" "}
+                <a href="/leaderboard" className="font-medium text-[var(--fa-accent)] hover:underline">
+                  See the leaderboard
+                </a>
+              </p>
+            </section>
+          )}
           <section aria-labelledby="meta-heading" className="surface-card rounded-2xl p-4 sm:p-5">
             <h2 id="meta-heading" className="flex items-center gap-1.5 text-[15px] font-semibold tracking-tight">
               <ShieldCheck className="h-4 w-4 text-[var(--fa-success)]" aria-hidden="true" />

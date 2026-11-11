@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/materials/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
 import { SITE_URL } from "@/lib/site/index-data";
+import { CREATOR } from "@/lib/site/creator";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -37,6 +38,13 @@ export const metadata: Metadata = {
     images: ["/og.png"],
   },
   robots: { index: true, follow: true },
+  authors: [{ name: CREATOR.name, url: CREATOR.portfolioUrl }],
+  creator: CREATOR.name,
+  // Search console ownership tokens (set in the host's environment when available).
+  verification: {
+    ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
+    ...(process.env.BING_SITE_VERIFICATION ? { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } } : {}),
+  },
 };
 
 export const viewport: Viewport = {

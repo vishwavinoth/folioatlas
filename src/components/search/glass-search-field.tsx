@@ -55,7 +55,7 @@ export function GlassSearchField({
     <form
       role="search"
       onSubmit={(e) => e.preventDefault()}
-      className="glass group relative flex w-full items-center rounded-full"
+      className="glass group relative flex w-full items-center rounded-full transition-shadow focus-within:ring-2 focus-within:ring-[var(--fa-accent)]/60"
       aria-label={label}
     >
       <label htmlFor={id} className="sr-only">

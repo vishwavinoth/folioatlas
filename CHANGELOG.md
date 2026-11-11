@@ -4,6 +4,38 @@ All notable changes to FolioAtlas are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning is pragmatic
 (semantic versioning from 1.0.0).
 
+## [1.1.0] — 2026-11-11 (engagement, leaderboard, SEO)
+
+### Added
+- **Likes, views and site visits** for every portfolio — anonymous and deduplicated (one like per
+  visitor; views/visits once per visitor per UTC day), bots ignored, per-network daily caps. Only
+  salted hashes are stored; the IP hash rotates daily. Hidden unless `ENGAGEMENT_SALT` is set.
+  Migration `supabase/migrations/0003_engagement.sql` (locked-down tables, aggregate-only public
+  functions, service-role-only writes).
+- **Leaderboard** (`/leaderboard`, Product Hunt style): daily / weekly / monthly / yearly / all time,
+  ranked by likes or views, with date navigation and a day/month quick-jump strip; "Trending this
+  week" on the home page; "On FolioAtlas" stats on portfolio pages.
+- **Server-rendered content for SEO**: pages embed the exact API payloads their views request, so
+  directory lists, profiles and the leaderboard are in the HTML for crawlers and AI assistants.
+- JSON-LD `@graph` (WebSite + SearchAction, creator Person, CollectionPage + ItemList, ProfilePage,
+  BreadcrumbList); sharper titles/descriptions with live counts; `noindex` for thin profiles.
+- Per-portfolio social cards (`/og/portfolio/{slug}`, bundled DejaVu Sans with its license).
+- Sitemap with every profile that has role text (real upstream `lastmod`), `robots.txt` welcoming
+  named AI crawlers, `/llms.txt` + `/llms-full.txt`, web manifest + PNG icons, `humans.txt`,
+  `.well-known/security.txt`, security headers, search-console verification env vars.
+- "Developed by Vishwa R" credit with portfolio / GitHub (LinkedIn configurable) links.
+
+### Fixed
+- Letter pages (`/portfolios/letter/x`) listed the whole directory: the letter was never sent to
+  the search API for the path form.
+- Focus rings: the global `:focus-visible` style was unlayered, so it overrode every component's
+  `outline-none` (the command palette input showed a clipped ring) and forced `border-radius: 4px`
+  on focused pill buttons. It now lives in `@layer base`; search fields show a container ring.
+- Hydration safety: all dates render in UTC and numbers in `en-US`, matching server output.
+- Layout: navigation collapses into the menu below 1024px (it overflowed at 768px), the footer
+  stacks below 1024px and wraps the repository name, compact pagination on small phones, card
+  names wrap instead of truncating, leaderboard period tabs fit on phones.
+
 ## [1.0.0] — 2026-11-11 (public launch)
 
 ### Changed

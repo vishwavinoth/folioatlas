@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { FolioAtlasApp } from "@/components/folioatlas-app";
 import { llmConfigured } from "@/lib/ai/provider";
+import { engagementEnabled } from "@/lib/engagement/server";
 import { loadClientIndex } from "@/lib/site/index-data";
 
 export const metadata: Metadata = { title: "Page not found", robots: { index: false } };
@@ -10,7 +11,7 @@ export const metadata: Metadata = { title: "Page not found", robots: { index: fa
 export default function NotFound() {
   return (
     <Suspense>
-      <FolioAtlasApp index={loadClientIndex()} features={{ ai: llmConfigured() }} />
+      <FolioAtlasApp index={loadClientIndex()} features={{ ai: llmConfigured(), engagement: engagementEnabled() }} />
     </Suspense>
   );
 }

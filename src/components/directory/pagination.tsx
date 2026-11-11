@@ -62,7 +62,7 @@ export function Pagination({
 
       {items.map((item, i) =>
         item === "ellipsis" ? (
-          <span key={`e-${i}`} className="flex h-9 w-6 items-center justify-center text-sm text-[var(--fa-text-secondary)]" aria-hidden="true">
+          <span key={`e-${i}`} className="hidden h-9 w-6 items-center justify-center text-sm text-[var(--fa-text-secondary)] sm:flex" aria-hidden="true">
             …
           </span>
         ) : item === page ? (
@@ -70,9 +70,10 @@ export function Pagination({
             key={item}
             aria-current="page"
             aria-label={`Page ${item}, current page`}
-            className="flex h-9 min-w-9 items-center justify-center rounded-full bg-[var(--fa-accent)] px-2 text-sm font-medium text-white shadow-sm"
+            className="flex h-9 min-w-9 items-center justify-center rounded-full bg-[var(--fa-accent)] px-2.5 text-sm font-medium tabular-nums text-white shadow-sm"
           >
             {item}
+            <span className="sm:hidden">&nbsp;/ {totalPages}</span>
           </span>
         ) : (
           <a
@@ -80,7 +81,7 @@ export function Pagination({
             href={makeHref(item)}
             onClick={onPageFallback ? (e) => { e.preventDefault(); onPageFallback(item); } : undefined}
             aria-label={`Page ${item}`}
-            className="flex h-9 min-w-9 items-center justify-center rounded-full px-2 text-sm text-[var(--fa-text-secondary)] transition-colors hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.07]"
+            className="hidden h-9 min-w-9 items-center justify-center rounded-full px-2 text-sm text-[var(--fa-text-secondary)] transition-colors hover:bg-black/[0.05] hover:text-foreground sm:flex dark:hover:bg-white/[0.07]"
           >
             {item}
           </a>

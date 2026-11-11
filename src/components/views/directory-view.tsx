@@ -19,6 +19,7 @@ import { useApi } from "@/hooks/use-api";
 import { paletteControls } from "@/components/command/palette-host";
 import { buildHref, navigateTo, type Route } from "@/lib/router/router";
 import { useFeatures } from "@/lib/features/context";
+import { searchApiUrl } from "@/lib/router/api-urls";
 import { toast } from "@/lib/notify";
 import { collectionBySlug } from "@/lib/portfolio/collections";
 import { technologyLabel } from "@/lib/portfolio/classify";
@@ -89,19 +90,8 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
   const techs = techSlugFromPath ? [techSlugFromPath] : urlTech;
   const sort: SortKey = SORTS.some((s) => s.key === sortParam) ? (sortParam as SortKey) : "name-asc";
 
-  // ── Keyword search (server-backed, debounced) ────────────────────────
-  const params = new URLSearchParams();
-  if (urlQ) params.set("q", urlQ);
-  if (techs.length) params.set("tech", techs.join(","));
-  if (collectionDef) params.set("collection", collectionDef.slug);
-  if (letter && !letterFromPath) params.set("letter", letter);
-  if (site !== "any") params.set("site", site);
-  if (hasSummary) params.set("hasSummary", "true");
-  if (addedWithin) params.set("addedWithin", addedWithin);
-  params.set("sort", sort);
-  params.set("page", String(pageParam));
-
-  const searchUrl = `/api/search?${params.toString()}`;
+  // ── Keyword search (server-backed; URL shared with server pre-rendering) ─
+  const searchUrl = searchApiUrl(route);
   const { data, loading, error } = useApi<SearchResult>(mode === "keyword" ? searchUrl : null);
 
   const activeFilterCount =
@@ -236,7 +226,7 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
         </div>
       ) : (
         <form
-          className="glass mt-3 flex items-center rounded-full pl-4 pr-1.5"
+          className="glass mt-3 flex items-center rounded-full pl-4 pr-1.5 transition-shadow focus-within:ring-2 focus-within:ring-[var(--fa-accent)]/60"
           role="search"
           onSubmit={(e) => {
             e.preventDefault();
@@ -394,7 +384,7 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
                       }`}
                     >
                       <span>{t.label}</span>
-                      <span className="text-xs text-[var(--fa-text-secondary)]">{t.count.toLocaleString()}</span>
+                      <span className="text-xs text-[var(--fa-text-secondary)]">{t.count.toLocaleString("en-US")}</span>
                     </button>
                   );
                 })}
@@ -552,7 +542,7 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
       <p className="mt-6 text-sm text-[var(--fa-text-secondary)]" role="status" aria-live="polite">
         {loading || aiLoading
           ? "Searching…"
-          : `${total.toLocaleString()} result${total === 1 ? "" : "s"} of ${index.stats.valid.toLocaleString()} portfolios`}
+          : `${total.toLocaleString("en-US")} result${total === 1 ? "" : "s"} of ${index.stats.valid.toLocaleString("en-US")} portfolios`}
       </p>
 
       {/* Results */}

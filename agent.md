@@ -20,7 +20,13 @@ with AI search, AI summaries, verified growth analytics, previews, and a command
   generates metadata/JSON-LD on the server and renders the client shell; `src/lib/router/router.ts`
   wraps the Next router. Plain `<a href="/…">` links are intercepted for client transitions.
 - **Feature flags:** `useFeatures()` (`src/lib/features/context.tsx`) — AI controls render only when
-  `GROQ_API_KEY` is configured (PRD: no non-functional buttons).
+  `GROQ_API_KEY` is configured, likes/views/leaderboard only when `ENGAGEMENT_SALT` + the Supabase
+  secret key are set (PRD: no non-functional buttons).
+- **Server-rendered data:** `src/app/[[...slug]]/page.tsx` embeds the API payloads a view requests
+  (`src/lib/store/payloads.ts`), keyed by the exact URL from `src/lib/router/api-urls.ts`; `useApi`
+  seeds from them. A view's request URL must come from `api-urls.ts`, or SSR silently stops.
+- **Hydration:** render dates with `timeZone: "UTC"` and numbers with `toLocaleString("en-US")` —
+  the server renders the same markup the browser hydrates.
 
 ## 2. Repository map
 

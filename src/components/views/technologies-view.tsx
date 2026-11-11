@@ -48,7 +48,7 @@ export function TechnologiesView({ index }: { index: ClientIndex }) {
                 </div>
                 {blurb && <p className="mt-2 text-[13px] leading-relaxed text-[var(--fa-text-secondary)]">{blurb}</p>}
                 <p className="mt-auto pt-3 text-[13px] font-medium text-[var(--fa-text-secondary)]">
-                  {tech.count.toLocaleString()} portfolio{tech.count === 1 ? "" : "s"}
+                  {tech.count.toLocaleString("en-US")} portfolio{tech.count === 1 ? "" : "s"}
                 </p>
               </a>
             </li>
@@ -96,7 +96,7 @@ export function TechnologyLandingView({ slug, index, route }: { slug: string; in
                   <Skeleton className="inline-block h-4 w-32 align-middle" />
                 ) : (
                   <>
-                    {(data?.technology.count ?? 0).toLocaleString()} of {index.stats.valid.toLocaleString()} portfolios
+                    {(data?.technology.count ?? 0).toLocaleString("en-US")} of {index.stats.valid.toLocaleString("en-US")} portfolios
                   </>
                 )}
               </div>

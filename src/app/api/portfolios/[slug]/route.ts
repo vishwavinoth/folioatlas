@@ -1,4 +1,4 @@
-import { getPortfolioBySlug, getRelatedPortfolios } from "@/lib/store/queries";
+import { detailPayload } from "@/lib/store/payloads";
 import { jsonError, serverError, PUBLIC_CACHE } from "@/lib/server/request";
 
 export const dynamic = "force-dynamic";
@@ -12,10 +12,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }
   if (!/^[a-z0-9-]{1,80}$/.test(slug)) return jsonError("invalid-slug", 400);
 
   try {
-    const portfolio = await getPortfolioBySlug(slug);
-    if (!portfolio) return jsonError("not-found", 404);
-    const related = await getRelatedPortfolios(portfolio, 4);
-    return Response.json({ portfolio, related }, { headers: { "cache-control": PUBLIC_CACHE } });
+    const payload = await detailPayload(slug);
+    if (!payload) return jsonError("not-found", 404);
+    return Response.json(payload, { headers: { "cache-control": PUBLIC_CACHE } });
   } catch (err) {
     return serverError("api/portfolios/detail", err, "detail-failed");
   }

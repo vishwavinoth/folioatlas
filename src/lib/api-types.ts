@@ -35,13 +35,9 @@ export type AiSearchResponse = {
   };
 };
 
-export type StatsResponse = {
-  stats: PlatformStats;
-  recentlyAdded: WirePortfolio[];
-  featured: WirePortfolio[];
-  collections: Collection[];
-  technologies: TechnologyMeta[];
-};
+export type { LeaderboardItem, LeaderboardResponse, StatsPayload as StatsResponse } from "@/lib/store/payloads";
+
+export type EngagementCounts = { likes: number; views: number; visits: number };
 
 export type DetailResponse = {
   portfolio: WirePortfolio;

@@ -1,17 +1,19 @@
 "use client";
 
-import { Compass, ExternalLink, Github } from "lucide-react";
+import { Compass, ExternalLink, Github, Globe, Linkedin } from "lucide-react";
 import type { ClientIndex } from "@/lib/portfolio/types";
-import { CREATOR, RELEASE_STAGE } from "@/lib/site/creator";
+import { CREATOR, RELEASE_STAGE, creatorLinks } from "@/lib/site/creator";
+
+const LINK_ICONS = { Portfolio: Globe, GitHub: Github, LinkedIn: Linkedin } as const;
 
 export function SiteFooter({ index }: { index: ClientIndex }) {
   const synced = new Date(index.generatedAt);
-  const syncedLabel = synced.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  const syncedLabel = synced.toLocaleDateString("en-US", { timeZone: "UTC", year: "numeric", month: "short", day: "numeric" });
 
   return (
     <footer className="fa-footer-safe mt-auto border-t border-[var(--surface-border)] bg-[var(--surface)]">
       <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
-        <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-sm">
             <div className="flex items-center gap-2 font-semibold">
               <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--fa-accent)] text-white">
@@ -31,18 +33,38 @@ export function SiteFooter({ index }: { index: ClientIndex }) {
                 FolioAtlas is in beta — things may change, and feedback is very welcome.
               </p>
             )}
-            <p className="mt-3 text-[13px] text-[var(--fa-text-secondary)]">
-              Built by{" "}
-              <a
-                className="font-medium text-foreground transition-colors hover:text-[var(--fa-accent)]"
-                href={CREATOR.profileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {CREATOR.name}
-                <span className="sr-only"> (opens in a new tab)</span>
-              </a>
-            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[13px] text-[var(--fa-text-secondary)]">
+              <span>
+                Developed by{" "}
+                <a
+                  className="font-medium text-foreground transition-colors hover:text-[var(--fa-accent)]"
+                  href={CREATOR.portfolioUrl}
+                  target="_blank"
+                  rel="author noopener"
+                >
+                  {CREATOR.name}
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              </span>
+              <span className="flex items-center gap-1">
+                {creatorLinks().map(({ label, href }) => {
+                  const Icon = LINK_ICONS[label];
+                  return (
+                    <a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="me noopener"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--fa-text-secondary)] transition-colors hover:bg-black/[0.05] hover:text-foreground dark:hover:bg-white/[0.08]"
+                      aria-label={`${CREATOR.name} on ${label} (opens in a new tab)`}
+                      title={`${CREATOR.name} — ${label}`}
+                    >
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </a>
+                  );
+                })}
+              </span>
+            </div>
             <div className="mt-3 flex flex-wrap gap-2">
               <a
                 href={`https://github.com/${index.source.repository}/blob/${index.source.branch}/CONTRIBUTING.md`}
@@ -53,16 +75,6 @@ export function SiteFooter({ index }: { index: ClientIndex }) {
                 Add your portfolio
                 <ExternalLink className="h-3 w-3" aria-hidden="true" />
                 <span className="sr-only">(opens the upstream repository in a new tab)</span>
-              </a>
-              <a
-                href={CREATOR.profileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-8 items-center gap-1 rounded-full border border-[var(--surface-border)] px-3.5 text-xs font-medium text-foreground/80 transition-colors hover:text-[var(--fa-accent)]"
-              >
-                <Github className="h-3.5 w-3.5" aria-hidden="true" />
-                {CREATOR.contactLabel}
-                <span className="sr-only">(opens in a new tab)</span>
               </a>
             </div>
           </div>
@@ -94,8 +106,11 @@ export function SiteFooter({ index }: { index: ClientIndex }) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Github className="h-3.5 w-3.5" aria-hidden="true" />
-                    {index.source.repository}
+                    <Github className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    <span>
+                      {index.source.repository.split("/")[0]}/<wbr />
+                      {index.source.repository.split("/")[1]}
+                    </span>
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />
                   </a>
                 </li>
@@ -117,7 +132,7 @@ export function SiteFooter({ index }: { index: ClientIndex }) {
 
         <div className="mt-8 flex flex-col gap-2 border-t border-[var(--surface-border)] pt-5 text-xs text-[var(--fa-text-secondary)] sm:flex-row sm:items-center sm:justify-between">
           <p>
-            {index.stats.valid.toLocaleString()} portfolios · data synced {syncedLabel}
+            {index.stats.valid.toLocaleString("en-US")} portfolios · data synced {syncedLabel}
             {index.source.commit ? (
               <>
                 {" "}· commit{" "}

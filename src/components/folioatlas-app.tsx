@@ -5,6 +5,7 @@ import type { ClientIndex } from "@/lib/portfolio/types";
 import { collectionBySlug } from "@/lib/portfolio/collections";
 import { navigateTo, useRoute, type Route } from "@/lib/router/router";
 import { FeaturesProvider, type Features } from "@/lib/features/context";
+import { PrefetchProvider, type PrefetchMap } from "@/hooks/prefetch-context";
 import { GlassNavigation } from "@/components/navigation/glass-navigation";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { HomeView } from "@/components/views/home-view";
@@ -13,6 +14,7 @@ import { TechnologiesView, TechnologyLandingView } from "@/components/views/tech
 import { AboutView, MethodologyView, PrivacyView } from "@/components/views/content-views";
 import { ErrorState, NotFoundState } from "@/components/feedback/states";
 import { PortfolioDetail } from "@/components/portfolio/portfolio-detail";
+import { LeaderboardView } from "@/components/views/leaderboard-view";
 import { CommandPaletteHost } from "@/components/command/palette-host";
 
 class ViewErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -34,7 +36,7 @@ class ViewErrorBoundary extends Component<{ children: ReactNode }, { hasError: b
   }
 }
 
-function renderView(route: Route, index: ClientIndex): ReactNode {
+function renderView(route: Route, index: ClientIndex, features: Features): ReactNode {
   const p = route.path;
 
   if (p === "/" || p === "") return <HomeView />;
@@ -68,6 +70,8 @@ function renderView(route: Route, index: ClientIndex): ReactNode {
     return <TechnologyLandingView key={slug} slug={slug} index={index} route={route} />;
   }
 
+  if (p === "/leaderboard") return features.engagement ? <LeaderboardView route={route} /> : <NotFoundState />;
+
   if (p === "/about") return <AboutView index={index} />;
   if (p === "/methodology") return <MethodologyView index={index} />;
   if (p === "/privacy") return <PrivacyView />;
@@ -85,7 +89,16 @@ function internalHref(anchor: HTMLAnchorElement): string | null {
   return href;
 }
 
-export function FolioAtlasApp({ index, features }: { index: ClientIndex; features: Features }) {
+export function FolioAtlasApp({
+  index,
+  features,
+  prefetch = {},
+}: {
+  index: ClientIndex;
+  features: Features;
+  /** Server-rendered API responses for this page (see payloads.ts). */
+  prefetch?: PrefetchMap;
+}) {
   const { route } = useRoute();
 
   // Client-side transitions for plain anchors; modifier clicks keep native behavior.
@@ -120,6 +133,7 @@ export function FolioAtlasApp({ index, features }: { index: ClientIndex; feature
 
   return (
     <FeaturesProvider value={features}>
+      <PrefetchProvider value={prefetch}>
       <GlassNavigation />
       <main id="main-content" className="flex-1 pt-[76px]">
         <ViewErrorBoundary>
@@ -128,12 +142,13 @@ export function FolioAtlasApp({ index, features }: { index: ClientIndex; feature
               <ErrorState title="Directory index unavailable" />
             </div>
           ) : (
-            renderView(route, index)
+            renderView(route, index, features)
           )}
         </ViewErrorBoundary>
       </main>
       <SiteFooter index={index} />
       <CommandPaletteHost />
+      </PrefetchProvider>
     </FeaturesProvider>
   );
 }

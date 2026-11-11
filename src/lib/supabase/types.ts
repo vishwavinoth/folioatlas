@@ -76,6 +76,26 @@ export type SnapshotRow = {
   source_commit_sha: string | null;
 };
 
+export type ReactionRow = {
+  portfolio_id: string;
+  visitor_hash: string;
+  ip_hash: string;
+  created_at: string;
+};
+
+export type EventRow = {
+  id: number;
+  portfolio_id: string;
+  kind: "view" | "visit";
+  visitor_hash: string;
+  ip_hash: string;
+  day: string;
+  created_at: string;
+};
+
+/** Aggregate row returned by the engagement_* functions. */
+export type EngagementCountRow = { portfolio_id: string; likes: number; views: number; visits: number };
+
 export type Database = {
   public: {
     Tables: {
@@ -94,9 +114,25 @@ export type Database = {
       portfolio_ai_summaries: Table<AiSummaryRow, "portfolio_id" | "source_hash">;
       sync_runs: Table<SyncRunRow, "started_at">;
       portfolio_count_snapshots: Table<SnapshotRow, "recorded_at" | "total_portfolios">;
+      portfolio_reactions: Table<ReactionRow, "portfolio_id" | "visitor_hash" | "ip_hash">;
+      portfolio_events: Table<EventRow, "portfolio_id" | "kind" | "visitor_hash" | "ip_hash" | "day">;
     };
     Views: Record<never, never>;
-    Functions: Record<never, never>;
+    Functions: {
+      engagement_counts: { Args: { p_ids: string[] }; Returns: EngagementCountRow[] };
+      engagement_leaderboard: {
+        Args: { p_from: string; p_to: string; p_metric?: string; p_limit?: number };
+        Returns: EngagementCountRow[];
+      };
+      record_reaction: {
+        Args: { p_portfolio_id: string; p_visitor_hash: string; p_ip_hash: string; p_liked: boolean; p_daily_cap: number };
+        Returns: { liked: boolean; likes: number; capped: boolean }[];
+      };
+      record_event: {
+        Args: { p_portfolio_id: string; p_kind: string; p_visitor_hash: string; p_ip_hash: string; p_daily_cap: number };
+        Returns: boolean;
+      };
+    };
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;
   };
