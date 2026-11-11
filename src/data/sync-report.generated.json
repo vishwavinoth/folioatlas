@@ -4,24 +4,24 @@
     "repository": "emmabostian/developer-portfolios",
     "file": "README.md",
     "branch": "master",
-    "commit": "f1ace59cab5a8e5d4895321d519508387cfdffdf"
+    "commit": "d52f88a64710ab1f72eac17d31e9cf77fe3d74dc"
   },
-  "generatedAt": "2026-10-26T16:35:28.404Z",
+  "generatedAt": "2026-11-11T19:11:47.773Z",
   "stats": {
-    "linesScanned": 2176,
-    "entriesDetected": 2072,
-    "valid": 2072,
+    "linesScanned": 2215,
+    "entriesDetected": 2110,
+    "valid": 2110,
     "duplicatesRemoved": 0,
     "quarantined": 0,
-    "withDescription": 1213,
-    "classified": 1018,
+    "withDescription": 1255,
+    "classified": 1050,
     "nameCollisionsKept": 0
   },
   "warnings": [
     "line 196: unencoded quotes stripped from URL — \"Akshay Abraham\"",
-    "line 934: secondary link ignored — \"[Repo](https://jsn.cam/repo)\"",
-    "line 1235: recovered with lenient spacing — \"Md Mizan\"",
-    "line 1855: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
+    "line 953: secondary link ignored — \"[Repo](https://jsn.cam/repo)\"",
+    "line 1261: recovered with lenient spacing — \"Md Mizan\"",
+    "line 1889: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
     "2 URL hash fragment(s) dropped during normalization",
     "1 entr(ies) whose initial does not match the upstream section letter"
   ],
@@ -31,12 +31,12 @@
     {
       "slug": "full-stack",
       "label": "Full Stack",
-      "count": 600
+      "count": 617
     },
     {
       "slug": "ai-ml",
       "label": "AI / ML",
-      "count": 264
+      "count": 279
     },
     {
       "slug": "frontend",
@@ -46,17 +46,17 @@
     {
       "slug": "devops-cloud",
       "label": "DevOps & Cloud",
-      "count": 74
+      "count": 78
     },
     {
       "slug": "backend",
       "label": "Backend",
-      "count": 62
+      "count": 66
     },
     {
       "slug": "react",
       "label": "React",
-      "count": 59
+      "count": 62
     },
     {
       "slug": "mobile",
@@ -71,16 +71,21 @@
     {
       "slug": "student",
       "label": "Student",
-      "count": 44
+      "count": 45
     },
     {
       "slug": "nextjs",
       "label": "Next.js",
-      "count": 30
+      "count": 33
     },
     {
       "slug": "data",
       "label": "Data",
+      "count": 32
+    },
+    {
+      "slug": "python",
+      "label": "Python",
       "count": 29
     },
     {
@@ -89,33 +94,28 @@
       "count": 28
     },
     {
-      "slug": "python",
-      "label": "Python",
-      "count": 27
-    },
-    {
       "slug": "typescript",
       "label": "TypeScript",
-      "count": 23
+      "count": 25
     },
     {
       "slug": "security",
       "label": "Security",
-      "count": 21
+      "count": 23
     },
     {
-      "slug": "dotnet",
-      "label": ".NET",
-      "count": 15
-    },
-    {
-      "slug": "flutter",
-      "label": "Flutter",
-      "count": 15
+      "slug": "java",
+      "label": "Java",
+      "count": 16
     },
     {
       "slug": "nodejs",
       "label": "Node.js",
+      "count": 16
+    },
+    {
+      "slug": "dotnet",
+      "label": ".NET",
       "count": 15
     },
     {
@@ -124,23 +124,23 @@
       "count": 15
     },
     {
-      "slug": "java",
-      "label": "Java",
+      "slug": "flutter",
+      "label": "Flutter",
       "count": 14
     },
     {
       "slug": "blockchain",
       "label": "Blockchain",
-      "count": 10
-    },
-    {
-      "slug": "game-dev",
-      "label": "Game Dev",
-      "count": 7
+      "count": 11
     },
     {
       "slug": "vue",
       "label": "Vue",
+      "count": 8
+    },
+    {
+      "slug": "game-dev",
+      "label": "Game Dev",
       "count": 7
     },
     {
@@ -151,7 +151,7 @@
     {
       "slug": "founder",
       "label": "Founder",
-      "count": 4
+      "count": 5
     },
     {
       "slug": "angular",
