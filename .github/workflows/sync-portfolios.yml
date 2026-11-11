@@ -81,6 +81,10 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: bun scripts/seed-db.ts --clone-dir "$RUNNER_TEMP/upstream"
 
+      - name: Regenerate the social preview image
+        if: steps.diff.outputs.changed == 'true'
+        run: bun scripts/generate-og.ts
+
       - name: Commit the refreshed artifact
         if: steps.diff.outputs.changed == 'true'
         run: |
@@ -88,6 +92,6 @@ jobs:
           commit=$(bun -e 'console.log((require("./src/data/portfolios.generated.json").source.commit || "").slice(0, 7))')
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/data/portfolios.generated.json src/data/sync-report.generated.json
+          git add src/data/portfolios.generated.json src/data/sync-report.generated.json public/og.png
           git commit -m "chore(data): sync ${count} portfolios from upstream ${commit}"
           git push

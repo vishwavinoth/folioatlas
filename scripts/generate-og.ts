@@ -2,6 +2,7 @@
  * FolioAtlas — Open Graph social image generator.
  * Renders a restrained 1200×630 brand card using the ACTUAL index stats
  * (no invented numbers) and writes public/og.png.
+ * Runs in the daily sync workflow so the count on shared links stays current.
  * Usage: bun scripts/generate-og.ts
  */
 import sharp from "sharp";
@@ -17,9 +18,15 @@ const index = JSON.parse(readFileSync(join(ROOT, "src", "data", "portfolios.gene
 
 const count = index.stats.valid.toLocaleString("en-US");
 const topTech = index.technologies
-  .slice(0, 4)
+  .slice(0, 3)
   .map((t) => t.label)
-  .join("   ·   ");
+  .join("  ·  ");
+
+// Lay the stat row out from text length (DejaVu Sans is the fallback font on
+// CI/Linux; ~0.62em per bold glyph, ~0.56em per regular glyph at these sizes).
+const countLabel = `${count} portfolios`;
+const pillWidth = Math.round(countLabel.length * 26 * 0.62 + 56);
+const techX = 120 + pillWidth + 28;
 
 /** Escape XML special characters for safe SVG interpolation. */
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -62,18 +69,18 @@ const svg = `
   <text x="214" y="184" font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="40" font-weight="600" fill="#F5F5F7">FolioAtlas</text>
 
   <!-- headline -->
-  <text x="120" y="316" font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="76" font-weight="700" fill="#F5F5F7">Discover real developer</text>
-  <text x="120" y="404" font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="76" font-weight="700" fill="#F5F5F7">portfolios.</text>
+  <text x="120" y="316" font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="72" font-weight="700" fill="#F5F5F7">Discover real developer</text>
+  <text x="120" y="400" font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="72" font-weight="700" fill="#F5F5F7">portfolios.</text>
 
-  <!-- stat pill -->
-  <g transform="translate(120 470)">
-    <rect width="664" height="64" rx="32" fill="url(#glass)" stroke="#FFFFFF" stroke-opacity="0.16"/>
-    <text x="28" y="40" font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="26" font-weight="600" fill="#0A84FF">${count} portfolios</text>
-    <text x="240" y="40" font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="24" fill="#A1A1A6">${esc(topTech)}</text>
+  <!-- stat pill + focus areas -->
+  <g transform="translate(120 466)">
+    <rect width="${pillWidth}" height="64" rx="32" fill="#0A84FF" fill-opacity="0.16" stroke="#0A84FF" stroke-opacity="0.45"/>
+    <text x="${pillWidth / 2}" y="41" text-anchor="middle" font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="26" font-weight="600" fill="#5AB0FF">${esc(countLabel)}</text>
   </g>
+  <text x="${techX}" y="507" font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="24" fill="#A1A1A6">${esc(topTech)}</text>
 
   <!-- source line -->
-  <text x="120" y="586" font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="22" fill="#6E6E73">Open-source directory data · ${esc(index.source.repository)}</text>
+  <text x="120" y="586" font-family="-apple-system, 'Segoe UI', 'DejaVu Sans', sans-serif" font-size="22" fill="#8E8E93">Synced daily from github.com/${esc(index.source.repository)}</text>
 </svg>
 `;
 

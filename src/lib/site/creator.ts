@@ -10,4 +10,4 @@ export const CREATOR = {
 } as const;
 
 /** Release stage shown as a badge in the navigation and a note in the footer. Set to null at launch. */
-export const RELEASE_STAGE: string | null = "Beta";
+export const RELEASE_STAGE: string | null = null;

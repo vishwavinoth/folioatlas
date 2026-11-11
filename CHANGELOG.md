@@ -2,7 +2,14 @@
 
 All notable changes to FolioAtlas are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning is pragmatic
-(0.x until the 1.0 public launch).
+(semantic versioning from 1.0.0).
+
+## [1.0.0] — 2026-11-11 (public launch)
+
+### Changed
+- Out of beta: the Beta badge and footer note are removed (`RELEASE_STAGE = null`).
+- Social preview image (`public/og.png`) redrawn: the count pill no longer overlaps the focus
+  areas, and the daily sync regenerates it so shared links always show the current count.
 
 ## [0.5.2] — 2026-11-11 (automatic sync fixed)
 
