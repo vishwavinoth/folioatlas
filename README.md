@@ -136,7 +136,7 @@ Copy `.env.example` to `.env.local` (never commit it):
 | `SUPABASE_SECRET_KEY` | for AI summaries + seeding | **Server-only**, bypasses RLS — never expose to the browser |
 | `NEXT_PUBLIC_SITE_URL` | production | Canonical origin used for metadata, sitemap, JSON-LD |
 | `GITHUB_TOKEN` | no | Optional read-only token if raw.githubusercontent rate limits you |
-| `GITHUB_OWNER/REPO/REF/README_PATH` | no | Upstream source overrides |
+| `UPSTREAM_OWNER/REPO/REF/README_PATH` | no | Upstream source overrides (not `GITHUB_*`, which Actions reserves) |
 | `GROQ_API_KEY` | no | Enables Groq for AI search intents + summaries (server-only) |
 | `GROQ_MODEL` | no | Any Groq JSON-mode model (default `llama-3.3-70b-versatile`) |
 
@@ -189,21 +189,24 @@ but `noindex`. Old `/#/…` links redirect to their clean equivalents.
 
 ### Scheduled data synchronization
 
-`.github/workflows/sync-portfolios.yml` runs daily (and on manual dispatch):
+`.github/workflows/sync-portfolios.yml` runs daily at 06:00 UTC (and on manual dispatch), fully
+automatically:
 
-1. Fetch upstream README → parse → validate → generate artifacts
-2. If the index changed: run unit tests → open a PR with the diff (auditable)
-3. If upstream fetch/parsing fails: keep the previous artifact, fail the job visibly
+1. Fetch the upstream README → parse → validate → generate artifacts
+2. Compare the portfolio list and upstream commit with `main` (timestamp-only changes are ignored)
+3. If it changed: unit tests → update Supabase (`scripts/seed-db.ts`, recording a `sync_runs` row +
+   snapshot) → commit the refreshed artifact to `main`, which Vercel redeploys
+4. Any failure stops the run before anything is published; the previous data keeps serving
 
-When that PR is merged, `.github/workflows/sync-database.yml` runs `scripts/seed-db.ts` against
-Supabase (repository secrets `SUPABASE_URL` + `SUPABASE_SECRET_KEY`), recording a
-`sync_runs` row + snapshot so the verified chart history grows automatically.
+Requires the repository secrets `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. Every data change is
+an auditable `chore(data): …` commit. `.github/workflows/sync-database.yml` re-syncs Supabase on
+manual dispatch or when a person pushes an artifact change (e.g. a revert).
 
 `ci.yml` runs lint, typecheck, unit tests, and the production build on every push/PR.
 
 ### Rollback
 
-Data rollbacks are Git operations — revert the data PR (or check out the previous artifact) and
+Data rollbacks are Git operations — revert the `chore(data)` commit (or check out the previous artifact) and
 re-run the "Sync database" workflow. The sync pipeline never mutates data in place: artifacts are replaced atomically only
 after validation, and failed syncs never erase good data.
 

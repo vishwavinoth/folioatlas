@@ -5,8 +5,9 @@
  * classify → generate versioned artifacts atomically.
  *
  * Usage:  bun scripts/sync-portfolios.ts [--check]
- * Env:    GITHUB_TOKEN (optional read-only), GITHUB_OWNER, GITHUB_REPO,
- *         GITHUB_REF, GITHUB_README_PATH
+ * Env:    GITHUB_TOKEN (optional read-only), UPSTREAM_OWNER, UPSTREAM_REPO,
+ *         UPSTREAM_REF, UPSTREAM_README_PATH
+ *         (not GITHUB_*: GitHub Actions sets GITHUB_REF to this repo's own branch)
  */
 import { parseReadme } from "../src/lib/portfolio/parse";
 import { validateAndNormalizeUrl } from "../src/lib/portfolio/url";
@@ -21,9 +22,9 @@ const OUT_INDEX = join(ROOT, "src", "data", "portfolios.generated.json");
 const OUT_REPORT = join(ROOT, "src", "data", "sync-report.generated.json");
 const SCHEMA_VERSION = 1;
 
-const OWNER = process.env.GITHUB_OWNER || "emmabostian";
-const REPO = process.env.GITHUB_REPO || "developer-portfolios";
-const README_PATH = process.env.GITHUB_README_PATH || "README.md";
+const OWNER = process.env.UPSTREAM_OWNER || "emmabostian";
+const REPO = process.env.UPSTREAM_REPO || "developer-portfolios";
+const README_PATH = process.env.UPSTREAM_README_PATH || "README.md";
 const REPOSITORY = `${OWNER}/${REPO}`;
 const CHECK_MODE = process.argv.includes("--check");
 
@@ -57,9 +58,9 @@ async function fetchWithRetries(url: string, init: RequestInit, attempts = 3, ti
   throw lastError instanceof Error ? lastError : new Error("fetch-failed");
 }
 
-/** Resolve the default branch when GITHUB_REF is not set (PRD §8.2). */
+/** Resolve the upstream default branch when UPSTREAM_REF is not set (PRD §8.2). */
 async function resolveRef(): Promise<string> {
-  if (process.env.GITHUB_REF) return process.env.GITHUB_REF;
+  if (process.env.UPSTREAM_REF) return process.env.UPSTREAM_REF;
   try {
     const headers: Record<string, string> = { Accept: "application/vnd.github+json" };
     if (process.env.GITHUB_TOKEN) {
@@ -87,15 +88,14 @@ async function resolveCommit(ref: string): Promise<string | null> {
 
 async function main(): Promise<void> {
   const branch = await resolveRef();
-  const headers: Record<string, string> = {};
-  if (process.env.GITHUB_TOKEN) {
-    headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
-  }
 
+  // The upstream README is public: fetch it without credentials. A token that
+  // is not valid for the upstream repository (e.g. the Actions GITHUB_TOKEN,
+  // scoped to this repo) makes raw.githubusercontent.com answer 404.
   const rawUrl = `https://raw.githubusercontent.com/${REPOSITORY}/${branch}/${README_PATH}`;
   let markdown: string;
   try {
-    const res = await fetchWithRetries(rawUrl, { headers });
+    const res = await fetchWithRetries(rawUrl, {});
     markdown = await res.text();
   } catch (err) {
     // PRD §14: a failed sync must NOT erase a previously valid index.

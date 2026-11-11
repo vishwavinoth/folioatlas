@@ -4,6 +4,21 @@ All notable changes to FolioAtlas are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning is pragmatic
 (0.x until the 1.0 public launch).
 
+## [0.5.2] — 2026-11-11 (automatic sync fixed)
+
+### Fixed
+- **Daily sync never succeeded.** The script read the upstream branch from `GITHUB_REF`, which
+  GitHub Actions sets to this repository's own branch (`refs/heads/main`), so it requested a
+  README that does not exist (404). Upstream overrides are now `UPSTREAM_OWNER`,
+  `UPSTREAM_REPO`, `UPSTREAM_REF` and `UPSTREAM_README_PATH`.
+- The public README is fetched without credentials: a token scoped to another repository made
+  raw.githubusercontent.com answer 404 as well.
+
+### Changed
+- The daily sync is fully automatic: on a real change it runs the tests, updates Supabase and
+  commits the refreshed artifact to `main` (no pull request to merge). Timestamp-only changes
+  are ignored. `actions/checkout` updated to v5.
+
 ## [0.5.1] — 2026-10-26 (feedback + beta)
 
 ### Added

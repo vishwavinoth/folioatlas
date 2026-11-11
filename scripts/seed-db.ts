@@ -35,9 +35,9 @@ import type { Database } from "../src/lib/supabase/types";
 
 const ROOT = join(import.meta.dir, "..");
 const ARTIFACT = join(ROOT, "src", "data", "portfolios.generated.json");
-const REPO_URL = `https://github.com/${process.env.GITHUB_OWNER || "emmabostian"}/${process.env.GITHUB_REPO || "developer-portfolios"}`;
-const README_PATH = process.env.GITHUB_README_PATH || "README.md";
-const REPOSITORY = `${process.env.GITHUB_OWNER || "emmabostian"}/${process.env.GITHUB_REPO || "developer-portfolios"}`;
+const REPOSITORY = `${process.env.UPSTREAM_OWNER || "emmabostian"}/${process.env.UPSTREAM_REPO || "developer-portfolios"}`;
+const REPO_URL = `https://github.com/${REPOSITORY}`;
+const README_PATH = process.env.UPSTREAM_README_PATH || "README.md";
 
 const cloneArgIdx = process.argv.indexOf("--clone-dir");
 const CLONE_DIR = cloneArgIdx !== -1 ? process.argv[cloneArgIdx + 1] : join(tmpdir(), "fa-upstream");
