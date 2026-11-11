@@ -17,7 +17,7 @@ import {
   type LeaderboardResponse,
 } from "@/lib/store/payloads";
 import type { SearchResult } from "@/lib/store/catalog";
-import { llmConfigured } from "@/lib/ai/provider";
+import { aiAvailable } from "@/lib/ai/provider";
 import { engagementEnabled } from "@/lib/engagement/server";
 import { parseAnchor, parseMetric, parsePeriod } from "@/lib/engagement/period";
 import { parseSearchQuery } from "@/lib/server/request";
@@ -464,7 +464,7 @@ export default async function Page({ params, searchParams }: Props) {
       <Suspense>
         <FolioAtlasApp
           index={loadClientIndex()}
-          features={{ ai: llmConfigured(), engagement: engagementEnabled() }}
+          features={{ ai: await aiAvailable(), engagement: engagementEnabled() }}
           prefetch={prefetch}
         />
       </Suspense>

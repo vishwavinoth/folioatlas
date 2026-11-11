@@ -68,6 +68,7 @@ export async function POST(req: Request) {
   } catch (err) {
     const name = err instanceof Error ? err.name : "Error";
     if (name === "LlmUnavailableError" || name === "LlmRequestError") {
+      if (name === "LlmRequestError") console.warn("[api/ai/search] provider error:", (err as Error).message.slice(0, 200));
       return Response.json(
         { error: "ai-unavailable", detail: "AI search is temporarily unavailable — keyword search still works." },
         { status: 503 }

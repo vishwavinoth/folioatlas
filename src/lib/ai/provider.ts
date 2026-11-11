@@ -38,7 +38,7 @@ export class LlmRequestError extends Error {
 }
 
 export function groqConfigured(): boolean {
-  return Boolean(process.env.GROQ_API_KEY);
+  return Boolean(process.env.GROQ_API_KEY?.trim());
 }
 
 export function groqModel(): string {
@@ -47,6 +47,35 @@ export function groqModel(): string {
 
 export function llmConfigured(): boolean {
   return groqConfigured();
+}
+
+const PROBE_TTL_MS = 10 * 60_000;
+let probe: { at: number; ok: Promise<boolean> } | null = null;
+
+/**
+ * Whether AI features actually work: the key is set AND Groq accepts it for
+ * the configured model (cheap model lookup, cached per instance for 10 min).
+ * Decides whether AI controls render, so a missing, revoked or mistyped key
+ * never leaves non-functional buttons on the site.
+ */
+export function aiAvailable(): Promise<boolean> {
+  if (!groqConfigured()) return Promise.resolve(false);
+  if (probe && Date.now() - probe.at < PROBE_TTL_MS) return probe.ok;
+  const ok = (async () => {
+    try {
+      const res = await fetch(`https://api.groq.com/openai/v1/models/${encodeURIComponent(groqModel())}`, {
+        headers: { authorization: `Bearer ${process.env.GROQ_API_KEY?.trim()}` },
+        signal: AbortSignal.timeout(4000),
+      });
+      if (!res.ok) console.warn(`[ai] Groq unavailable for model ${groqModel()}: http-${res.status}; AI features hidden`);
+      return res.ok;
+    } catch (err) {
+      console.warn("[ai] Groq probe failed; AI features hidden:", err instanceof Error ? err.message : err);
+      return false;
+    }
+  })();
+  probe = { at: Date.now(), ok };
+  return ok;
 }
 
 async function groqComplete(system: string, user: string, maxTokens: number): Promise<LlmResult> {

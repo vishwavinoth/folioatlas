@@ -32,6 +32,9 @@ All notable changes to FolioAtlas are documented here. Format follows
   `outline-none` (the command palette input showed a clipped ring) and forced `border-radius: 4px`
   on focused pill buttons. It now lives in `@layer base`; search fields show a container ring.
 - Hydration safety: all dates render in UTC and numbers in `en-US`, matching server output.
+- AI controls appeared in production although AI requests failed (an invalid `GROQ_API_KEY`):
+  AI features now render only after Groq accepts the key for the configured model (cached probe,
+  10 min), and the reason is logged when it does not.
 - Layout: navigation collapses into the menu below 1024px (it overflowed at 768px), the footer
   stacks below 1024px and wraps the repository name, compact pagination on small phones, card
   names wrap instead of truncating, leaderboard period tabs fit on phones.
