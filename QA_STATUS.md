@@ -1,6 +1,6 @@
 # QA Status — FolioAtlas
 
-**Snapshot:** 2026-11-11 · **Version:** 1.1.0 · **Data:** upstream commit `d52f88a` (synced daily) · **Production:** Vercel + Supabase
+**Snapshot:** 2026-11-12 · **Version:** 1.1.1 · **Data:** upstream commit `d52f88a` (synced daily) · **Production:** Vercel + Supabase
 
 ## 1. Automated gates
 
@@ -33,6 +33,7 @@
 | Card actions fit every grid width (no overflow) | ✅ |
 | Detail page: Website card, share, source & verification, related | ✅ |
 | AI controls hidden when `GROQ_API_KEY` is unset | ✅ |
+| Live Groq (`openai/gpt-oss-120b`): AI search intents + results, summary generated then served cached, ~450–550 tokens and <1 s per call | ✅ (production, 2026-11-12) |
 | Shortcuts: `/` focuses search, `⌘/Ctrl+K` palette, Enter opens top result | ✅ |
 | Mobile menu: navigate + theme control, no horizontal overflow | ✅ |
 | Hydration / console errors across all routes | ✅ none (except the intended 404 on unknown paths) |
@@ -60,5 +61,4 @@
 
 | ID | Gap | Severity | Next step |
 |---|---|---|---|
-| KI-2 | Groq path verified with mocked responses only (default `openai/gpt-oss-120b`) | Medium | Set `GROQ_API_KEY` in Vercel, redeploy, run AI search + one summary live |
 | KI-3 | No automated E2E suite in CI (verified with ad-hoc Playwright scripts) | Medium | TEST_BACKLOG T-02 |
