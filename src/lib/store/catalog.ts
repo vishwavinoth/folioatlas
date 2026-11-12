@@ -246,42 +246,40 @@ export type IntentMatch = {
   matchedTechnologies: string[];
   matchedKeywords: string[];
   relevanceScore: number;
+  /** Matches every technology and keyword of the intent. */
+  complete: boolean;
 };
 
 /**
- * Execute a validated AI intent: every chosen technology must be present,
- * each keyword must hit (any of its tokens) a searchable field, and
- * exclusions must not appear in name or role. Ranked transparently.
+ * Execute a validated AI intent. Exclusions are hard filters; technologies
+ * and keywords rank instead of filter, so a detailed request still returns
+ * its closest real matches. Entries matching every technology and keyword
+ * (`complete`) always rank first. Ranked transparently.
  */
 export function intentSearch(entries: CatalogEntry[], plan: IntentPlan): IntentMatch[] {
   const keywordTokens = plan.keywords
     .map((kw) => ({ kw, tokens: kw.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 4) }))
     .filter((k) => k.tokens.length > 0);
   const exclusions = plan.exclusions.map((x) => x.toLowerCase());
+  const criteria = plan.technologies.length + keywordTokens.length;
 
-  const candidates = entries.filter(
-    (e) =>
-      plan.technologies.every((slug) => hasTech(e, slug)) &&
-      keywordTokens.every((k) => k.tokens.some((t) => tokenHits(e, t))) &&
-      !exclusions.some((x) => e.folded.name.includes(x) || e.folded.role.includes(x))
-  );
-
-  return candidates
+  return entries
+    .filter((e) => !exclusions.some((x) => e.folded.name.includes(x) || e.folded.role.includes(x)))
     .map((e) => {
-      const techHits = e.wire.technologies.filter((t) => plan.technologies.includes(t));
-      const haystack = `${e.folded.name} ${e.folded.role}`;
-      const keywordHits = keywordTokens
-        .filter((k) => k.tokens.some((t) => haystack.includes(t) || e.wire.technologies.some((tech) => tech.includes(t))))
-        .map((k) => k.kw);
-      return { e, techHits, keywordHits, score: techHits.length * 30 + keywordHits.length * 12 };
+      const techHits = plan.technologies.filter((slug) => hasTech(e, slug));
+      const keywordHits = keywordTokens.filter((k) => k.tokens.some((t) => tokenHits(e, t))).map((k) => k.kw);
+      const hits = techHits.length + keywordHits.length;
+      const complete = criteria > 0 && hits === criteria;
+      return { e, techHits, keywordHits, complete, score: (complete ? 1000 : 0) + techHits.length * 30 + keywordHits.length * 12 };
     })
-    .filter((s) => s.score > 0)
+    .filter((s) => s.techHits.length + s.keywordHits.length > 0)
     .sort((a, b) => b.score - a.score || byName(a.e, b.e))
     .map((s) => ({
       portfolio: s.e.wire,
       matchedTechnologies: s.techHits,
       matchedKeywords: s.keywordHits,
       relevanceScore: s.score,
+      complete: s.complete,
     }));
 }
 

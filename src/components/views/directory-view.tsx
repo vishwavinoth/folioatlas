@@ -299,6 +299,13 @@ export function DirectoryView({ index, route, hideHeading = false }: DirectoryPr
                   via {aiResult.model} · {Math.round(aiResult.confidence * 100)}% confidence
                 </span>
               </div>
+              {aiResult.results.total > 0 && aiResult.exactCount < aiResult.results.total && (
+                <p className="mt-2 text-xs text-[var(--fa-text-secondary)]">
+                  {aiResult.exactCount > 0
+                    ? `${aiResult.exactCount.toLocaleString("en-US")} match everything you asked for; the rest are the closest matches.`
+                    : "No portfolio matches every part of your request — showing the closest matches first."}
+                </p>
+              )}
               <p className="mt-2 text-[11px] text-[var(--fa-text-secondary)]">
                 Results come from a real database query — the AI only builds the query; it cannot invent entries.
               </p>

@@ -26,6 +26,8 @@ export type AiSearchResponse = {
   confidence: number;
   intent: { technologies: string[]; keywords: string[]; exclusions: string[] };
   model: string;
+  /** Results matching every technology and keyword; the rest are closest matches. */
+  exactCount: number;
   results: {
     items: AiSearchResultItem[];
     page: number;

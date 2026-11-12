@@ -15,6 +15,9 @@ All notable changes to FolioAtlas are documented here. Format follows
   skip the rate limit and spend no quota. Token usage is logged per call as `[ai] …`.
 
 ### Fixed
+- AI search returned nothing for detailed requests ("Python backend engineers into machine
+  learning" → 0) because every detected technology and keyword was required. They now rank
+  instead of filter: complete matches first, then the closest matches, with a note saying which.
 - Any visitor could regenerate a current AI summary, spending quota on every click; a current
   summary is now returned without an LLM call, and "Refresh summary" appears only after the
   upstream entry changed.

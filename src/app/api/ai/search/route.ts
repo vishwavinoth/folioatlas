@@ -72,6 +72,7 @@ export async function POST(req: Request) {
       confidence: intent.confidence,
       intent: { technologies: plan.technologies, keywords: plan.keywords, exclusions: plan.exclusions },
       model,
+      exactCount: matches.filter((m) => m.complete).length,
       results,
     });
   } catch (err) {

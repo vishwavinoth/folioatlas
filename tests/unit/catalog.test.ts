@@ -189,14 +189,28 @@ describe("discovery helpers", () => {
 });
 
 describe("intentSearch", () => {
-  test("requires every technology and every keyword, excludes terms", () => {
+  test("complete matches rank first, partial matches follow, exclusions are hard", () => {
     const matches = intentSearch(catalog, { technologies: ["react"], keywords: ["engineer"], exclusions: [] });
-    expect(matches.map((m) => m.portfolio.name)).toEqual(["Carol"]);
+    expect(matches[0].portfolio.name).toBe("Carol");
+    expect(matches[0].complete).toBe(true);
     expect(matches[0].matchedTechnologies).toEqual(["react"]);
     expect(matches[0].matchedKeywords).toEqual(["engineer"]);
+    expect(matches.slice(1).every((m) => !m.complete)).toBe(true);
+    expect(matches.map((m) => m.portfolio.name)).toContain("Alice");
 
     const excluded = intentSearch(catalog, { technologies: ["react"], keywords: [], exclusions: ["frontend"] });
     expect(excluded.map((m) => m.portfolio.name)).toEqual(["Alice"]);
+  });
+
+  test("an over-specific request still returns closest matches", () => {
+    const matches = intentSearch(catalog, { technologies: ["react", "frontend", "full-stack"], keywords: ["engineer"], exclusions: [] });
+    expect(matches.length).toBeGreaterThan(0);
+    expect(matches.some((m) => m.complete)).toBe(false);
+    expect(matches[0].portfolio.name).toBe("Carol");
+  });
+
+  test("an intent with no criteria returns nothing", () => {
+    expect(intentSearch(catalog, { technologies: [], keywords: [], exclusions: [] })).toEqual([]);
   });
 });
 
