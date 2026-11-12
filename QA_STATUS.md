@@ -8,7 +8,7 @@
 |---|---|---|
 | Lint | `bun run lint` | ✅ 0 problems |
 | Typecheck | `bun run typecheck` | ✅ 0 errors |
-| Unit tests | `bun test` | ✅ 96/96 pass (parser, URLs, classification, catalog search/filter/sort/related, AI intent validation, growth bucketing, leaderboard periods, anonymous hashing, bot filtering) |
+| Unit tests | `bun test` | ✅ 112/112 pass (Groq request shape + fallback policy, intent cache, summary staleness, parser, URLs, classification, catalog search/filter/sort/related, AI intent validation, growth bucketing, leaderboard periods, anonymous hashing, bot filtering) |
 | Production build | `bun run build` | ✅ catch-all page + 11 API routes + OG image route + sitemap/robots/llms/manifest/icons |
 | Client bundle | grep `.next/static` for secret env names | ✅ none |
 
@@ -60,5 +60,5 @@
 
 | ID | Gap | Severity | Next step |
 |---|---|---|---|
-| KI-2 | Groq path untested with a real `GROQ_API_KEY` | Medium | Set the key, then run AI search + summary once |
+| KI-2 | Groq path verified with mocked responses only (default `openai/gpt-oss-120b`) | Medium | Set `GROQ_API_KEY` in Vercel, redeploy, run AI search + one summary live |
 | KI-3 | No automated E2E suite in CI (verified with ad-hoc Playwright scripts) | Medium | TEST_BACKLOG T-02 |

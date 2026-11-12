@@ -3,28 +3,23 @@ import { intentSearch, paginate } from "@/lib/store/catalog";
 import { jsonError, serverError } from "@/lib/server/request";
 import { rateLimit, clientIp } from "@/lib/server/rate-limit";
 import { completeJson, extractJson } from "@/lib/ai/provider";
-import { buildIntentPrompt, validateIntent, planFromIntent } from "@/lib/ai/search-intent";
+import { buildIntentPrompt, validateIntent, planFromIntent, type SearchIntent } from "@/lib/ai/search-intent";
+import { createIntentCache } from "@/lib/ai/intent-cache";
 
 export const dynamic = "force-dynamic";
+
+const intents = createIntentCache<{ intent: SearchIntent; model: string }>();
 
 /**
  * POST /api/ai/search — natural-language portfolio search.
  *
- * Flow: rate limit → LLM intent (validated against canonical vocabulary) →
+ * Flow: cached intent, or rate limit → LLM intent (validated against canonical vocabulary) →
  * REAL query plan over the directory → transparent results with match reasons.
  * The model never invents records; it only shapes a query that the database
  * executes against real records. Falls back with a machine-readable error so the client can
  * switch to keyword search.
  */
 export async function POST(req: Request) {
-  const limit = rateLimit(`ai-search:${clientIp(req)}`, 10, 60_000);
-  if (!limit.allowed) {
-    return Response.json(
-      { error: "rate-limited", retryAfterSeconds: limit.retryAfterSeconds },
-      { status: 429, headers: { "retry-after": String(limit.retryAfterSeconds) } }
-    );
-  }
-
   let body: { query?: unknown };
   try {
     body = (await req.json()) as { query?: unknown };
@@ -34,13 +29,27 @@ export async function POST(req: Request) {
   const query = typeof body.query === "string" ? body.query.trim().slice(0, 300) : "";
   if (!query) return jsonError("missing-query", 400);
 
-  try {
-    const technologies = await listTechnologies();
-    const knownSlugs = new Set(technologies.map((t) => t.slug));
-    const { system, user } = buildIntentPrompt(query, technologies.slice(0, 30));
+  // Only uncached queries spend LLM quota, so only they are rate-limited.
+  let pending = intents.peek(query);
+  if (!pending) {
+    const limit = rateLimit(`ai-search:${clientIp(req)}`, 10, 60_000);
+    if (!limit.allowed) {
+      return Response.json(
+        { error: "rate-limited", retryAfterSeconds: limit.retryAfterSeconds },
+        { status: 429, headers: { "retry-after": String(limit.retryAfterSeconds) } }
+      );
+    }
+    pending = intents.fill(query, async () => {
+      const technologies = await listTechnologies();
+      const knownSlugs = new Set(technologies.map((t) => t.slug));
+      const { system, user } = buildIntentPrompt(query, technologies.slice(0, 30));
+      const llm = await completeJson({ system, user, maxTokens: 450 });
+      return { intent: validateIntent(extractJson(llm.raw), knownSlugs), model: llm.model };
+    });
+  }
 
-    const llm = await completeJson({ system, user, maxTokens: 500 });
-    const intent = validateIntent(extractJson(llm.raw), knownSlugs);
+  try {
+    const { intent, model } = await pending;
     const plan = planFromIntent(intent);
 
     // Execute the REAL query: technologies (AND) + keywords (each must hit
@@ -62,7 +71,7 @@ export async function POST(req: Request) {
       interpretation: intent.interpretation,
       confidence: intent.confidence,
       intent: { technologies: plan.technologies, keywords: plan.keywords, exclusions: plan.exclusions },
-      model: llm.model,
+      model,
       results,
     });
   } catch (err) {

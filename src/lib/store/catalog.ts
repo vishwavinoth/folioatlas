@@ -38,6 +38,8 @@ export type AiSummaryWire = {
   specialties: string[];
   model: string;
   generatedAt: string;
+  /** The upstream entry changed after this summary was generated. */
+  stale: boolean;
 };
 
 export type SearchParamsInput = {
@@ -79,7 +81,7 @@ function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
 }
 
-export function mapSummary(s: AiSummaryRow | undefined | null): AiSummaryWire | null {
+export function mapSummary(s: AiSummaryRow | undefined | null, sourceEntryHash?: string): AiSummaryWire | null {
   if (!s || s.status !== "complete" || !s.summary) return null;
   return {
     summary: s.summary,
@@ -87,6 +89,7 @@ export function mapSummary(s: AiSummaryRow | undefined | null): AiSummaryWire | 
     specialties: stringArray(s.specialties),
     model: s.model,
     generatedAt: new Date(s.generated_at ?? s.updated_at).toISOString(),
+    stale: sourceEntryHash !== undefined && s.source_hash !== sourceEntryHash,
   };
 }
 
@@ -98,7 +101,7 @@ export function buildCatalog(rows: PortfolioRow[], summaries: AiSummaryRow[]): C
   const summaryByPortfolio = new Map(summaries.map((s) => [s.portfolio_id, s]));
   return rows
     .map((row): CatalogEntry => {
-      const summary = mapSummary(summaryByPortfolio.get(row.id));
+      const summary = mapSummary(summaryByPortfolio.get(row.id), row.source_entry_hash);
       const wire: WirePortfolio = {
         id: row.id,
         slug: row.slug,

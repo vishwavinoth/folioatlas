@@ -199,3 +199,17 @@ describe("intentSearch", () => {
     expect(excluded.map((m) => m.portfolio.name)).toEqual(["Alice"]);
   });
 });
+
+describe("mapSummary staleness", () => {
+  const row = {
+    id: "s1", portfolio_id: "p1", summary: "A grounded summary of twenty chars+.", key_technologies: [], specialties: [],
+    source_hash: "h1", model: "m", status: "complete", generated_at: "2026-11-01T00:00:00Z", error_code: null,
+    created_at: "2026-11-01T00:00:00Z", updated_at: "2026-11-01T00:00:00Z",
+  } as AiSummaryRow;
+  test("current when the source hash matches, stale when the entry changed", async () => {
+    const { mapSummary } = await import("../../src/lib/store/catalog");
+    expect(mapSummary(row, "h1")?.stale).toBe(false);
+    expect(mapSummary(row, "h2")?.stale).toBe(true);
+    expect(mapSummary({ ...row, status: "failed" }, "h1")).toBeNull();
+  });
+});

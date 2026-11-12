@@ -4,6 +4,23 @@ All notable changes to FolioAtlas are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning is pragmatic
 (semantic versioning from 1.0.0).
 
+## [1.1.1] — 2026-11-12 (Groq AI)
+
+### Changed
+- Groq default model is now `openai/gpt-oss-120b`: Groq retired `llama-3.3-70b-versatile` for
+  free and developer accounts on 2026-08-16. Requests use low reasoning effort with hidden
+  reasoning, and fall back once to `openai/gpt-oss-20b` (`GROQ_FALLBACK_MODEL`) when the primary
+  is rate-limited, missing or failing. The availability probe checks the account's model list.
+- AI search caches validated intents per instance (6 h, in-flight requests shared); cached queries
+  skip the rate limit and spend no quota. Token usage is logged per call as `[ai] …`.
+
+### Fixed
+- Any visitor could regenerate a current AI summary, spending quota on every click; a current
+  summary is now returned without an LLM call, and "Refresh summary" appears only after the
+  upstream entry changed.
+- A failed regeneration replaced the existing summary with an empty failed row.
+- The "Generate AI summary" button showed for entries with no source data, which always fails.
+
 ## [1.1.0] — 2026-11-11 (engagement, leaderboard, SEO)
 
 ### Added

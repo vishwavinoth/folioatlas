@@ -111,7 +111,7 @@ smoothing, no interpolation, no fabrication from a single report.
 |---|---|---|
 | Keyword search | Server-side token AND across name/role/url/technologies; debounced; URL-synced; relevance/name/newest sort; server-side pagination | ✅ |
 | Advanced filters | Multi focus-area (AND), site type, has-AI-summary, added-within window (verified dates); chips + clear-all; every state shareable | ✅ |
-| AI search (optional) | Hidden unless `GROQ_API_KEY` is set (no non-functional controls). Natural language → zod-validated intent restricted to the canonical vocabulary → real DB query → transparent "why matched" display; falls back to keyword search when no provider | ✅ (Groq path needs `GROQ_API_KEY`; verified in-sandbox via built-in provider fallback) |
+| AI search (optional) | Hidden unless `GROQ_API_KEY` is set (no non-functional controls). Natural language → zod-validated intent restricted to the canonical vocabulary → real DB query → transparent "why matched" display; falls back to keyword search when no provider | ✅ (Groq `openai/gpt-oss-120b`, falls back to `openai/gpt-oss-20b`; needs `GROQ_API_KEY`) |
 | AI summaries | Grounded-only prompt, schema-validated, persisted in DB with model/status/source-hash; reused, never regenerated per view; explicitly labeled AI-generated | ✅ 2 summaries generated & persisted; on-demand; batch refresh ⚠️ pending |
 | Command palette | `⌘K`/`Ctrl+K`, live API-driven results, controlled selection so Enter opens the top result, `⌘/Ctrl+Enter` new tab | ✅ |
 

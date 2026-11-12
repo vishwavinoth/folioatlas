@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 /**
  * POST /api/ai/summaries — generate (or refresh) the AI summary for one
  * portfolio. Rate-limited per IP; the summary is persisted and reused, so
- * this is a cache-fill operation, not a per-view render step.
+ * this is a cache-fill operation, not a per-view render step: a summary that
+ * is current for the entry's source data is returned without calling the LLM.
  *
  * Body: { slug: string }
  */
@@ -37,6 +38,9 @@ export async function POST(req: Request) {
     const portfolio = await getPortfolioBySlug(slug);
     const sourceEntryHash = await getSourceEntryHash(slug);
     if (!portfolio || sourceEntryHash === null) return jsonError("not-found", 404);
+    if (portfolio.aiSummary && !portfolio.aiSummary.stale) {
+      return Response.json({ status: "complete", summary: portfolio.aiSummary, cached: true });
+    }
 
     const result = await generateSummaryFor({
       id: portfolio.id,
@@ -45,6 +49,7 @@ export async function POST(req: Request) {
       portfolioUrl: portfolio.portfolioUrl,
       technologies: portfolio.technologies,
       sourceEntryHash,
+      keepExisting: Boolean(portfolio.aiSummary),
     });
 
     if (result.status === "failed") {

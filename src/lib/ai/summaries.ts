@@ -67,6 +67,7 @@ async function persistSummary(portfolioId: string, fields: Partial<SummaryFields
 /**
  * Generate + persist a summary for one portfolio. Failures are recorded with
  * a machine-readable error code; "no-llm-provider" means GROQ_API_KEY is unset.
+ * A failure never replaces an existing complete summary (keepExisting).
  */
 export async function generateSummaryFor(portfolio: {
   id: string;
@@ -75,8 +76,10 @@ export async function generateSummaryFor(portfolio: {
   portfolioUrl: string;
   technologies: string[];
   sourceEntryHash: string;
+  keepExisting?: boolean;
 }): Promise<{ status: "complete" | "failed"; errorCode?: string }> {
   const fail = async (errorCode: string) => {
+    if (portfolio.keepExisting) return { status: "failed" as const, errorCode };
     await persistSummary(portfolio.id, {
       summary: "",
       source_hash: portfolio.sourceEntryHash,
@@ -99,7 +102,7 @@ export async function generateSummaryFor(portfolio: {
   let result: Awaited<ReturnType<typeof completeJson>>;
   let payload: SummaryPayload;
   try {
-    result = await completeJson({ system, user, maxTokens: 400 });
+    result = await completeJson({ system, user, maxTokens: 450 });
     payload = SummarySchema.parse(extractJson(result.raw));
   } catch (err) {
     const name = err instanceof Error ? err.name : "";

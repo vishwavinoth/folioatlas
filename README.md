@@ -165,7 +165,8 @@ Copy `.env.example` to `.env.local` (never commit it):
 | `GITHUB_TOKEN` | no | Optional read-only token if raw.githubusercontent rate limits you |
 | `UPSTREAM_OWNER/REPO/REF/README_PATH` | no | Upstream source overrides (not `GITHUB_*`, which Actions reserves) |
 | `GROQ_API_KEY` | no | Enables Groq for AI search intents + summaries (server-only) |
-| `GROQ_MODEL` | no | Any Groq JSON-mode model (default `llama-3.3-70b-versatile`) |
+| `GROQ_MODEL` | no | Primary Groq model (default `openai/gpt-oss-120b`) |
+| `GROQ_FALLBACK_MODEL` | no | Tried once on rate limit/outage (default `openai/gpt-oss-20b`; `off` disables) |
 | `ENGAGEMENT_SALT` | for likes/views | Random 32+ char secret for anonymous hashing; never change once live |
 | `GOOGLE_SITE_VERIFICATION` / `BING_SITE_VERIFICATION` | no | Search console ownership tokens |
 
