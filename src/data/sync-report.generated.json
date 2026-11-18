@@ -4,24 +4,24 @@
     "repository": "emmabostian/developer-portfolios",
     "file": "README.md",
     "branch": "master",
-    "commit": "46692fbd50ba96262bb50f875064aea1f3a1d979"
+    "commit": "aae3bc6ee816e26f15daf281af6230195c272f59"
   },
-  "generatedAt": "2026-11-16T15:20:46.776Z",
+  "generatedAt": "2026-11-18T15:25:16.196Z",
   "stats": {
-    "linesScanned": 2216,
-    "entriesDetected": 2111,
-    "valid": 2111,
+    "linesScanned": 2219,
+    "entriesDetected": 2114,
+    "valid": 2114,
     "duplicatesRemoved": 0,
     "quarantined": 0,
-    "withDescription": 1259,
-    "classified": 1054,
+    "withDescription": 1262,
+    "classified": 1057,
     "nameCollisionsKept": 0
   },
   "warnings": [
     "line 194: unencoded quotes stripped from URL — \"Akshay Abraham\"",
-    "line 952: secondary link ignored — \"[Repo](https://jsn.cam/repo)\"",
-    "line 1262: recovered with lenient spacing — \"Md Mizan\"",
-    "line 1888: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
+    "line 953: secondary link ignored — \"[Repo](https://jsn.cam/repo)\"",
+    "line 1264: recovered with lenient spacing — \"Md Mizan\"",
+    "line 1891: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
     "2 URL hash fragment(s) dropped during normalization",
     "1 entr(ies) whose initial does not match the upstream section letter"
   ],
@@ -31,12 +31,12 @@
     {
       "slug": "full-stack",
       "label": "Full Stack",
-      "count": 616
+      "count": 618
     },
     {
       "slug": "ai-ml",
       "label": "AI / ML",
-      "count": 284
+      "count": 286
     },
     {
       "slug": "frontend",
@@ -76,12 +76,12 @@
     {
       "slug": "nextjs",
       "label": "Next.js",
-      "count": 33
+      "count": 34
     },
     {
       "slug": "data",
       "label": "Data",
-      "count": 32
+      "count": 33
     },
     {
       "slug": "python",
