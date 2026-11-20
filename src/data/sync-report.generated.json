@@ -4,24 +4,24 @@
     "repository": "emmabostian/developer-portfolios",
     "file": "README.md",
     "branch": "master",
-    "commit": "16a6858fa5e9686485826ee6fdaa31390607629f"
+    "commit": "a2e753121cfafa18b6ae7356f2f37b23dcfd16e3"
   },
-  "generatedAt": "2026-11-19T15:30:27.343Z",
+  "generatedAt": "2026-11-20T15:09:43.842Z",
   "stats": {
-    "linesScanned": 2223,
-    "entriesDetected": 2118,
-    "valid": 2118,
+    "linesScanned": 2226,
+    "entriesDetected": 2121,
+    "valid": 2121,
     "duplicatesRemoved": 0,
     "quarantined": 0,
-    "withDescription": 1266,
-    "classified": 1060,
+    "withDescription": 1269,
+    "classified": 1063,
     "nameCollisionsKept": 0
   },
   "warnings": [
-    "line 194: unencoded quotes stripped from URL — \"Akshay Abraham\"",
-    "line 957: secondary link ignored — \"[Repo](https://jsn.cam/repo)\"",
-    "line 1268: recovered with lenient spacing — \"Md Mizan\"",
-    "line 1895: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
+    "line 195: unencoded quotes stripped from URL — \"Akshay Abraham\"",
+    "line 958: secondary link ignored — \"[Repo](https://jsn.cam/repo)\"",
+    "line 1271: recovered with lenient spacing — \"Md Mizan\"",
+    "line 1898: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
     "2 URL hash fragment(s) dropped during normalization",
     "1 entr(ies) whose initial does not match the upstream section letter"
   ],
@@ -31,17 +31,17 @@
     {
       "slug": "full-stack",
       "label": "Full Stack",
-      "count": 620
+      "count": 621
     },
     {
       "slug": "ai-ml",
       "label": "AI / ML",
-      "count": 287
+      "count": 289
     },
     {
       "slug": "frontend",
       "label": "Frontend",
-      "count": 113
+      "count": 114
     },
     {
       "slug": "devops-cloud",
@@ -51,7 +51,7 @@
     {
       "slug": "backend",
       "label": "Backend",
-      "count": 66
+      "count": 67
     },
     {
       "slug": "react",
@@ -139,13 +139,13 @@
       "count": 8
     },
     {
-      "slug": "game-dev",
-      "label": "Game Dev",
-      "count": 6
-    },
-    {
       "slug": "wordpress",
       "label": "WordPress",
+      "count": 7
+    },
+    {
+      "slug": "game-dev",
+      "label": "Game Dev",
       "count": 6
     },
     {
