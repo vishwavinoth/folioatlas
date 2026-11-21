@@ -4,24 +4,24 @@
     "repository": "emmabostian/developer-portfolios",
     "file": "README.md",
     "branch": "master",
-    "commit": "a2e753121cfafa18b6ae7356f2f37b23dcfd16e3"
+    "commit": "61704028198c858ea68f5ff19479db7da2c7f907"
   },
-  "generatedAt": "2026-11-20T15:09:43.842Z",
+  "generatedAt": "2026-11-21T14:27:07.440Z",
   "stats": {
-    "linesScanned": 2226,
-    "entriesDetected": 2121,
-    "valid": 2121,
+    "linesScanned": 2230,
+    "entriesDetected": 2125,
+    "valid": 2125,
     "duplicatesRemoved": 0,
     "quarantined": 0,
-    "withDescription": 1269,
-    "classified": 1063,
+    "withDescription": 1273,
+    "classified": 1067,
     "nameCollisionsKept": 0
   },
   "warnings": [
     "line 195: unencoded quotes stripped from URL — \"Akshay Abraham\"",
-    "line 958: secondary link ignored — \"[Repo](https://jsn.cam/repo)\"",
-    "line 1271: recovered with lenient spacing — \"Md Mizan\"",
-    "line 1898: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
+    "line 960: secondary link ignored — \"[Repo](https://jsn.cam/repo)\"",
+    "line 1273: recovered with lenient spacing — \"Md Mizan\"",
+    "line 1902: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
     "2 URL hash fragment(s) dropped during normalization",
     "1 entr(ies) whose initial does not match the upstream section letter"
   ],
@@ -31,12 +31,12 @@
     {
       "slug": "full-stack",
       "label": "Full Stack",
-      "count": 621
+      "count": 623
     },
     {
       "slug": "ai-ml",
       "label": "AI / ML",
-      "count": 289
+      "count": 290
     },
     {
       "slug": "frontend",
@@ -56,7 +56,7 @@
     {
       "slug": "react",
       "label": "React",
-      "count": 61
+      "count": 63
     },
     {
       "slug": "mobile",
@@ -76,7 +76,7 @@
     {
       "slug": "nextjs",
       "label": "Next.js",
-      "count": 34
+      "count": 36
     },
     {
       "slug": "data",
@@ -94,13 +94,13 @@
       "count": 28
     },
     {
-      "slug": "security",
-      "label": "Security",
-      "count": 24
-    },
-    {
       "slug": "typescript",
       "label": "TypeScript",
+      "count": 25
+    },
+    {
+      "slug": "security",
+      "label": "Security",
       "count": 24
     },
     {
@@ -134,14 +134,14 @@
       "count": 11
     },
     {
+      "slug": "wordpress",
+      "label": "WordPress",
+      "count": 9
+    },
+    {
       "slug": "vue",
       "label": "Vue",
       "count": 8
-    },
-    {
-      "slug": "wordpress",
-      "label": "WordPress",
-      "count": 7
     },
     {
       "slug": "game-dev",
