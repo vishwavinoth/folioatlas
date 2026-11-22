@@ -4,24 +4,24 @@
     "repository": "emmabostian/developer-portfolios",
     "file": "README.md",
     "branch": "master",
-    "commit": "61704028198c858ea68f5ff19479db7da2c7f907"
+    "commit": "2067960e870fe83612482997ce37b809242f00ed"
   },
-  "generatedAt": "2026-11-21T14:27:07.440Z",
+  "generatedAt": "2026-11-22T14:22:41.361Z",
   "stats": {
-    "linesScanned": 2230,
-    "entriesDetected": 2125,
-    "valid": 2125,
+    "linesScanned": 2231,
+    "entriesDetected": 2126,
+    "valid": 2126,
     "duplicatesRemoved": 0,
     "quarantined": 0,
-    "withDescription": 1273,
-    "classified": 1067,
+    "withDescription": 1274,
+    "classified": 1068,
     "nameCollisionsKept": 0
   },
   "warnings": [
     "line 195: unencoded quotes stripped from URL — \"Akshay Abraham\"",
-    "line 960: secondary link ignored — \"[Repo](https://jsn.cam/repo)\"",
-    "line 1273: recovered with lenient spacing — \"Md Mizan\"",
-    "line 1902: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
+    "line 961: secondary link ignored — \"[Repo](https://jsn.cam/repo)\"",
+    "line 1274: recovered with lenient spacing — \"Md Mizan\"",
+    "line 1903: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
     "2 URL hash fragment(s) dropped during normalization",
     "1 entr(ies) whose initial does not match the upstream section letter"
   ],
@@ -31,7 +31,7 @@
     {
       "slug": "full-stack",
       "label": "Full Stack",
-      "count": 623
+      "count": 624
     },
     {
       "slug": "ai-ml",
