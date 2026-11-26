@@ -4,24 +4,24 @@
     "repository": "emmabostian/developer-portfolios",
     "file": "README.md",
     "branch": "master",
-    "commit": "1af518957983564a1960d01b5b513f3d198be807"
+    "commit": "bf8be3565879fdccc10b0aad34edea893b8ece7a"
   },
-  "generatedAt": "2026-11-25T16:59:14.687Z",
+  "generatedAt": "2026-11-26T16:40:07.203Z",
   "stats": {
-    "linesScanned": 2232,
-    "entriesDetected": 2127,
-    "valid": 2127,
+    "linesScanned": 2234,
+    "entriesDetected": 2129,
+    "valid": 2129,
     "duplicatesRemoved": 0,
     "quarantined": 0,
-    "withDescription": 1275,
-    "classified": 1069,
+    "withDescription": 1277,
+    "classified": 1071,
     "nameCollisionsKept": 0
   },
   "warnings": [
     "line 195: unencoded quotes stripped from URL — \"Akshay Abraham\"",
     "line 964: secondary link ignored — \"[Repo](https://jsn.cam/repo)\"",
-    "line 1275: recovered with lenient spacing — \"Md Mizan\"",
-    "line 1905: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
+    "line 1276: recovered with lenient spacing — \"Md Mizan\"",
+    "line 1907: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
     "2 URL hash fragment(s) dropped during normalization",
     "1 entr(ies) whose initial does not match the upstream section letter"
   ],
@@ -41,7 +41,7 @@
     {
       "slug": "frontend",
       "label": "Frontend",
-      "count": 113
+      "count": 114
     },
     {
       "slug": "devops-cloud",
@@ -56,12 +56,12 @@
     {
       "slug": "react",
       "label": "React",
-      "count": 63
+      "count": 65
     },
     {
       "slug": "mobile",
       "label": "Mobile",
-      "count": 56
+      "count": 57
     },
     {
       "slug": "student",
@@ -76,7 +76,7 @@
     {
       "slug": "nextjs",
       "label": "Next.js",
-      "count": 36
+      "count": 38
     },
     {
       "slug": "data",
@@ -119,14 +119,14 @@
       "count": 15
     },
     {
-      "slug": "php-laravel",
-      "label": "PHP / Laravel",
+      "slug": "flutter",
+      "label": "Flutter",
       "count": 15
     },
     {
-      "slug": "flutter",
-      "label": "Flutter",
-      "count": 14
+      "slug": "php-laravel",
+      "label": "PHP / Laravel",
+      "count": 15
     },
     {
       "slug": "blockchain",
