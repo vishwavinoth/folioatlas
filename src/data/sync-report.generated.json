@@ -4,24 +4,24 @@
     "repository": "emmabostian/developer-portfolios",
     "file": "README.md",
     "branch": "master",
-    "commit": "a5849eb9707e56c8397af653443a3fe7881e79e8"
+    "commit": "8abc0eeccf47a6209a6c659d5f75613420e31137"
   },
-  "generatedAt": "2026-11-27T16:25:34.514Z",
+  "generatedAt": "2026-11-28T15:17:31.246Z",
   "stats": {
-    "linesScanned": 2236,
-    "entriesDetected": 2131,
-    "valid": 2131,
+    "linesScanned": 2237,
+    "entriesDetected": 2132,
+    "valid": 2132,
     "duplicatesRemoved": 0,
     "quarantined": 0,
-    "withDescription": 1279,
-    "classified": 1073,
+    "withDescription": 1280,
+    "classified": 1074,
     "nameCollisionsKept": 0
   },
   "warnings": [
     "line 195: unencoded quotes stripped from URL — \"Akshay Abraham\"",
     "line 966: secondary link ignored — \"[Repo](https://jsn.cam/repo)\"",
     "line 1278: recovered with lenient spacing — \"Md Mizan\"",
-    "line 1909: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
+    "line 1910: secondary link ignored — \"[Link](https://www.shubhamrdg.me)\"",
     "2 URL hash fragment(s) dropped during normalization",
     "1 entr(ies) whose initial does not match the upstream section letter"
   ],
@@ -31,7 +31,7 @@
     {
       "slug": "full-stack",
       "label": "Full Stack",
-      "count": 624
+      "count": 625
     },
     {
       "slug": "ai-ml",
